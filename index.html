@@ -312,13 +312,17 @@
       margin-top: 10px
     }
 
-    .txt-trans {
+    .node .txt-trans {
       font-size: 11px;
-      color: #16a34a;
+      color: #16a34a !important;
       margin-top: 2px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .node.sel .txt-trans {
+      color: #16a34a !important;
     }
 
     .preview-trans {
@@ -389,6 +393,34 @@
     .style-tag-close {
       color: #dc2626;
     }
+
+    .runs-table-container {
+      position: relative;
+    }
+
+    .runs-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #f8fafc;
+    }
+
+    .runs-table .para-id {
+      width: 60px;
+      text-align: center;
+      color: var(--muted);
+      font-weight: 600;
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .runs-table tr.current-para {
+      background: #f1f5f9;
+    }
+
+    .runs-table tr.current-para:hover {
+      background: #e2e8f0;
+    }
   </style>
 </head>
 
@@ -448,9 +480,7 @@
             <div class="title">Runs (EN ↔ FR)</div>
             <div class="hint">Side-by-side runs for current paragraph</div>
           </div>
-          <div class="card-b">
-            <div id="runsCompare"></div>
-          </div>
+          <div class="card-b" id="runsCompare" style="max-height:44vh; overflow:auto"></div>
         </div>
 
         <div class="card">
@@ -1578,6 +1608,16 @@
       type.className = "type";
       type.textContent = node.type;
       r1.appendChild(name); r1.appendChild(type);
+      
+      // Add language indicator in green if translation exists
+      if (node.type === "w:p" && PARA_TRANSLATIONS[node.id]) {
+        const langLabel = document.createElement("span");
+        langLabel.className = "txt-trans";
+        langLabel.textContent = "FR";
+        langLabel.style.fontWeight = "700";
+        langLabel.style.marginLeft = "8px";
+        r1.appendChild(langLabel);
+      }
 
       meta.appendChild(r1);
 
@@ -1672,29 +1712,9 @@
         return;
       }
 
-      const paraEn = ALL_PARAS[pIdx];
-      const paraFr = ALL_PARAS_FR[pIdx];
-      const runsEn = paraEn.children || [];
-      const runsFr = paraFr.children || [];
-      const maxLen = Math.max(runsEn.length, runsFr.length);
-
-      const table = document.createElement("table");
-      table.className = "runs-table";
-
-      const thead = document.createElement("thead");
-      const hr = document.createElement("tr");
-      const th1 = document.createElement("th");
-      th1.className = "run-num";
-      th1.textContent = "#";
-      const th2 = document.createElement("th");
-      th2.textContent = "EN run text";
-      const th3 = document.createElement("th");
-      th3.textContent = "FR run text";
-      hr.appendChild(th1);
-      hr.appendChild(th2);
-      hr.appendChild(th3);
-      thead.appendChild(hr);
-      table.appendChild(thead);
+      // Get previous, current, and next paragraphs
+      const prevIdx = pIdx > 0 ? pIdx - 1 : null;
+      const nextIdx = pIdx < ALL_PARAS.length - 1 ? pIdx + 1 : null;
 
       function renderRunText(run) {
         if (!run || !run.text) {
@@ -1747,32 +1767,97 @@
         return wrapper;
       }
 
+      // Create single table with sticky header
+      const table = document.createElement("table");
+      table.className = "runs-table";
+
+      const thead = document.createElement("thead");
+      const hr = document.createElement("tr");
+      const th1 = document.createElement("th");
+      th1.className = "para-id";
+      th1.textContent = "Para";
+      const th2 = document.createElement("th");
+      th2.className = "run-num";
+      th2.textContent = "#";
+      const th3 = document.createElement("th");
+      th3.textContent = "EN run text";
+      const th4 = document.createElement("th");
+      th4.textContent = "FR run text";
+      hr.appendChild(th1);
+      hr.appendChild(th2);
+      hr.appendChild(th3);
+      hr.appendChild(th4);
+      thead.appendChild(hr);
+      table.appendChild(thead);
+
       const tbody = document.createElement("tbody");
-      for (let i = 0; i < maxLen; i++) {
-        const rEn = runsEn[i];
-        const rFr = runsFr[i];
-        const tr = document.createElement("tr");
+      
+      // Helper function to add rows for a paragraph
+      function addParagraphRows(paraEn, paraFr, paraIdx, isCurrent) {
+        const runsEn = paraEn.children || [];
+        const runsFr = paraFr.children || [];
+        const maxLen = Math.max(runsEn.length, runsFr.length);
 
-        const td1 = document.createElement("td");
-        td1.className = "run-num";
-        td1.textContent = String(i + 1);
+        for (let i = 0; i < maxLen; i++) {
+          const rEn = runsEn[i];
+          const rFr = runsFr[i];
+          const tr = document.createElement("tr");
+          
+          if (isCurrent) {
+            tr.className = "current-para";
+          }
 
-        const td2 = document.createElement("td");
-        td2.className = "run-text";
-        td2.appendChild(renderRunText(rEn));
+          const td1 = document.createElement("td");
+          td1.className = "para-id";
+          td1.textContent = `p${paraIdx}`;
 
-        const td3 = document.createElement("td");
-        td3.className = "run-text";
-        td3.appendChild(renderRunText(rFr));
+          const td2 = document.createElement("td");
+          td2.className = "run-num";
+          td2.textContent = String(i + 1);
 
-        tr.appendChild(td1);
-        tr.appendChild(td2);
-        tr.appendChild(td3);
-        tbody.appendChild(tr);
+          const td3 = document.createElement("td");
+          td3.className = "run-text";
+          td3.appendChild(renderRunText(rEn));
+
+          const td4 = document.createElement("td");
+          td4.className = "run-text";
+          td4.appendChild(renderRunText(rFr));
+
+          tr.appendChild(td1);
+          tr.appendChild(td2);
+          tr.appendChild(td3);
+          tr.appendChild(td4);
+          tbody.appendChild(tr);
+        }
       }
-      table.appendChild(tbody);
 
+      // Add rows for previous paragraph if it exists
+      if (prevIdx !== null && ALL_PARAS[prevIdx] && ALL_PARAS_FR[prevIdx]) {
+        addParagraphRows(ALL_PARAS[prevIdx], ALL_PARAS_FR[prevIdx], prevIdx, false);
+      }
+
+      // Add rows for current paragraph
+      addParagraphRows(ALL_PARAS[pIdx], ALL_PARAS_FR[pIdx], pIdx, true);
+
+      // Add rows for next paragraph if it exists
+      if (nextIdx !== null && ALL_PARAS[nextIdx] && ALL_PARAS_FR[nextIdx]) {
+        addParagraphRows(ALL_PARAS[nextIdx], ALL_PARAS_FR[nextIdx], nextIdx, false);
+      }
+
+      table.appendChild(tbody);
       container.appendChild(table);
+
+      // Scroll to center the current paragraph rows
+      setTimeout(() => {
+        const currentRows = container.querySelectorAll('.current-para');
+        if (currentRows.length > 0) {
+          const firstCurrentRow = currentRows[0];
+          const containerRect = container.getBoundingClientRect();
+          const rowRect = firstCurrentRow.getBoundingClientRect();
+          const scrollTop = container.scrollTop + (rowRect.top - containerRect.top) - (containerRect.height / 2) + (rowRect.height / 2);
+          container.scrollTop = Math.max(0, scrollTop);
+        }
+      }, 0);
     }
 
     function renderPreview() {
