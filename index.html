@@ -1,0 +1,917 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WordprocessingML Node Viewer</title>
+  <style>
+    :root{
+      --bg:#f8fafc; --card:#fff; --border:#e2e8f0; --text:#0f172a; --muted:#64748b;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:var(--sans); background:var(--bg); color:var(--text)}
+    .wrap{max-width:1200px; margin:0 auto; padding:20px}
+    .top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap}
+    h1{margin:0; font-size:20px}
+    .sub{margin-top:4px; color:var(--muted); font-size:13px}
+    .tags{display:flex; gap:8px; flex-wrap:wrap}
+    .tag{border:1px solid var(--border); border-radius:999px; padding:4px 8px; font-size:12px; color:#334155; background:#fff}
+    .grid{display:grid; grid-template-columns: 1fr; gap:14px; margin-top:14px}
+    @media(min-width:1000px){ .grid{grid-template-columns: 420px 1fr} }
+    .card{background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:0 1px 2px rgba(0,0,0,.03)}
+    .card-h{padding:12px 12px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; gap:10px}
+    .card-h .title{font-weight:700; font-size:13px}
+    .card-h .hint{font-size:12px; color:var(--muted)}
+    .card-b{padding:12px}
+    input[type="text"]{width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--border); outline:none; font-size:13px}
+    input[type="text"]:focus{box-shadow:0 0 0 3px rgba(15,23,42,.08)}
+    .scroll{max-height:72vh; overflow:auto; padding:8px}
+    .node{display:flex; align-items:center; gap:8px; padding:8px; border-radius:12px; cursor:pointer}
+    .node:hover{background:#f1f5f9}
+    .node.sel{background:#0f172a; color:#fff}
+    .node .tw{width:20px; height:20px; display:grid; place-items:center; border-radius:8px; user-select:none}
+    .node.sel .tw:hover{background:rgba(255,255,255,.14)}
+    .node:not(.sel) .tw:hover{background:rgba(0,0,0,.06)}
+    .node .meta{min-width:0}
+    .node .row{display:flex; gap:8px; align-items:baseline; min-width:0}
+    .node .name{font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+    .node .type{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+    .node.sel .type{color:rgba(255,255,255,.7)}
+    .node .txt{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px}
+    .node.sel .txt{color:rgba(255,255,255,.7)}
+    .indent{margin-left:14px}
+    .two{display:grid; grid-template-columns: 1fr; gap:12px}
+    @media(min-width:850px){ .two{grid-template-columns: 1fr 1fr} }
+    .box{border:1px solid var(--border); border-radius:16px; padding:12px}
+    .box .t{font-weight:700; font-size:12px}
+    .kv{display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--border)}
+    .kv:last-child{border-bottom:none}
+    .kv .k{font-size:12px; color:var(--muted); font-weight:700}
+    .kv .v{font-size:12px; color:var(--text); text-align:right; word-break:break-word}
+    .v.dim{color:#94a3b8}
+    .previewItem{border-radius:12px; padding:6px 8px}
+    .previewItem:hover{background:#f1f5f9}
+    .previewItem.sel{background:#f1f5f9}
+    .p{padding:8px 0}
+    .code{font-family:var(--mono); font-size:12px; background:#0b1220; color:#e2e8f0; border-radius:14px; padding:12px; max-height:40vh; overflow:auto}
+    .note{font-size:12px; color:var(--muted); margin-top:10px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>WordprocessingML → Node Representation</h1>
+        <div class="sub">document → body → paragraphs → runs (with a basic rich-text preview)</div>
+      </div>
+      <div class="tags">
+        <span class="tag">DOMParser</span>
+        <span class="tag">Node Tree</span>
+        <span class="tag">Rich Preview</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT -->
+      <div class="card">
+        <div class="card-h">
+          <div>
+            <div class="title">Nodes</div>
+            <div class="hint">Click to inspect</div>
+          </div>
+        </div>
+        <div class="card-b">
+          <input id="filter" type="text" placeholder="Filter paragraphs by text…" />
+        </div>
+        <div class="scroll" id="tree"></div>
+      </div>
+
+      <!-- RIGHT -->
+      <div style="display:flex; flex-direction:column; gap:14px">
+        <div class="card">
+          <div class="card-h">
+            <div class="title">Selected node</div>
+            <div class="hint" id="selHint">—</div>
+          </div>
+          <div class="card-b">
+            <div class="two">
+              <div class="box">
+                <div class="t">Metadata</div>
+                <div id="meta"></div>
+              </div>
+              <div class="box">
+                <div class="t">Properties</div>
+                <div id="props"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <div class="title">Rendered preview</div>
+            <div class="hint">(basic: b/i/u/color/font/size, alignment, simple lists)</div>
+          </div>
+          <div class="card-b" id="preview" style="max-height:44vh; overflow:auto"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <div>
+              <div class="title">Export: node JSON</div>
+              <div class="hint">Structured node representation</div>
+            </div>
+          </div>
+          <div class="card-b">
+            <pre class="code" id="json"></pre>
+          </div>
+        </div>
+
+        <div class="note">
+          Notes: This viewer focuses on paragraph + run structure from your snippet. WordprocessingML has many more constructs (tables, drawings, numbering definitions, style inheritance, themes, etc.).
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==== 1) Your XML (embedded) ====
+    const XML_SOURCE = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex" xmlns:cx1="http://schemas.microsoft.com/office/drawing/2015/9/8/chartex" xmlns:cx2="http://schemas.microsoft.com/office/drawing/2015/10/21/chartex" xmlns:cx3="http://schemas.microsoft.com/office/drawing/2016/5/9/chartex" xmlns:cx4="http://schemas.microsoft.com/office/drawing/2016/5/10/21/chartex" xmlns:cx5="http://schemas.microsoft.com/office/drawing/2016/5/11/chartex" xmlns:cx6="http://schemas.microsoft.com/office/drawing/2016/5/12/chartex" xmlns:cx7="http://schemas.microsoft.com/office/drawing/2016/5/13/chartex" xmlns:cx8="http://schemas.microsoft.com/office/drawing/2016/5/14/chartex" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:aink="http://schemas.microsoft.com/office/drawing/2016/ink" xmlns:am3d="http://schemas.microsoft.com/office/drawing/2017/model3d" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:oel="http://schemas.microsoft.com/office/2019/extlst" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:w16cex="http://schemas.microsoft.com/office/word/2018/wordml/cex" xmlns:w16cid="http://schemas.microsoft.com/office/word/2016/wordml/cid" xmlns:w16="http://schemas.microsoft.com/office/word/2018/wordml" xmlns:w16du="http://schemas.microsoft.com/office/word/2023/wordml/word16du" xmlns:w16sdtdh="http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash" xmlns:w16sdtfl="http://schemas.microsoft.com/office/word/2024/wordml/sdtformatlock" xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" mc:Ignorable="w14 w15 w16se w16cid w16 w16cex w16sdtdh w16sdtfl w16du wp14">
+    <w:body>
+    <w:p w14:paraId="1F4342AF" w14:textId="537A8B09" w:rsidR="003402BB" w:rsidRPr="00A504B4" w:rsidRDefault="00025BD6" w:rsidP="002C0C0C">
+      <w:pPr>
+        <w:pStyle w:val="Title"/>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+      </w:pPr>
+      <w:r w:rsidRPr="002C0C0C">
+        <w:t xml:space="preserve">Title: Understanding </w:t>
+      </w:r>
+      <w:r w:rsidR="002C0C0C" w:rsidRPr="002C0C0C">
+        <w:t xml:space="preserve">how Word codes </w:t>
+      </w:r>
+      <w:r w:rsidR="002C0C0C" w:rsidRPr="00A504B4">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>rich text</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="4608D22B" w14:textId="1B5D80E0" w:rsidR="002C0C0C" w:rsidRPr="00A504B4" w:rsidRDefault="0042255E" w:rsidP="0042255E">
+      <w:pPr>
+        <w:pStyle w:val="Heading1"/>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+      </w:pPr>
+      <w:r w:rsidRPr="00A504B4">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>How</w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve"> does </w:t>
+      </w:r>
+      <w:r w:rsidR="002C0C0C">
+        <w:t>Heading 1</w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve"> look </w:t>
+      </w:r>
+      <w:r w:rsidRPr="00A504B4">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>like</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="75C6CB15" w14:textId="60D9BC16" w:rsidR="0042255E" w:rsidRPr="00A504B4" w:rsidRDefault="0042255E" w:rsidP="002C0C0C">
+      <w:pPr>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+      </w:pPr>
+      <w:r w:rsidRPr="00A504B4">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>And what</w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve"> about normal </w:t>
+      </w:r>
+      <w:r w:rsidRPr="00A504B4">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>text?</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="653FFEED" w14:textId="7BB530C4" w:rsidR="00B2382C" w:rsidRDefault="00B2382C" w:rsidP="002C0C0C">
+      <w:r w:rsidRPr="00A504B4">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>And</w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve"> a line break.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="1CCC5BC1" w14:textId="005A526A" w:rsidR="000365F7" w:rsidRDefault="00B2382C" w:rsidP="000365F7">
+      <w:r>
+        <w:t xml:space="preserve">And </w:t>
+      </w:r>
+      <w:r w:rsidRPr="000365F7">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>bold</w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve"> vs. </w:t>
+      </w:r>
+      <w:r w:rsidRPr="000365F7">
+        <w:rPr>
+          <w:i/>
+          <w:iCs/>
+        </w:rPr>
+        <w:t>italics</w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve"> vs. </w:t>
+      </w:r>
+      <w:r w:rsidRPr="000365F7">
+        <w:rPr>
+          <w:u w:val="single"/>
+        </w:rPr>
+        <w:t>underline</w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve"> vs. </w:t>
+      </w:r>
+      <w:proofErr w:type="gramStart"/>
+      <w:r w:rsidRPr="000365F7">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+          <w:i/>
+          <w:iCs/>
+        </w:rPr>
+        <w:t>bold-italic</w:t>
+      </w:r>
+      <w:proofErr w:type="gramEnd"/>
+    </w:p>
+    <w:p w14:paraId="580A027E" w14:textId="61F962F2" w:rsidR="000365F7" w:rsidRDefault="000365F7" w:rsidP="000365F7">
+      <w:r>
+        <w:t xml:space="preserve">And </w:t>
+      </w:r>
+      <w:r w:rsidR="00EB0552" w:rsidRPr="00EB0552">
+        <w:rPr>
+          <w:sz w:val="28"/>
+          <w:szCs w:val="28"/>
+        </w:rPr>
+        <w:t>Font 14</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="7994136D" w14:textId="462E461D" w:rsidR="007E4F59" w:rsidRPr="007E4F59" w:rsidRDefault="00EB0552" w:rsidP="007E4F59">
+      <w:pPr>
+        <w:rPr>
+          <w:rFonts w:ascii="Courier New" w:hAnsi="Courier New" w:cs="Courier New"/>
+        </w:rPr>
+      </w:pPr>
+      <w:r>
+        <w:t xml:space="preserve">And </w:t>
+      </w:r>
+      <w:r w:rsidR="007E4F59" w:rsidRPr="007E4F59">
+        <w:rPr>
+          <w:rFonts w:ascii="Courier New" w:hAnsi="Courier New" w:cs="Courier New"/>
+        </w:rPr>
+        <w:t>courier new</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="6CB3B446" w14:textId="3C9EB761" w:rsidR="00DA6F5D" w:rsidRDefault="00DA6F5D" w:rsidP="007E4F59">
+      <w:r>
+        <w:t xml:space="preserve">And </w:t>
+      </w:r>
+      <w:r w:rsidRPr="00DA6F5D">
+        <w:rPr>
+          <w:rStyle w:val="SubtleEmphasis"/>
+        </w:rPr>
+        <w:t>Subtle Emphasis</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="7FC0C8D8" w14:textId="2036ADBB" w:rsidR="007E4F59" w:rsidRDefault="007E4F59" w:rsidP="007E4F59">
+      <w:r>
+        <w:t>And back to normal</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="76E997D2" w14:textId="56D58609" w:rsidR="00DA6F5D" w:rsidRDefault="00DA6F5D" w:rsidP="00DA6F5D">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+      </w:pPr>
+      <w:r>
+        <w:t>List paragraph</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="342CAE41" w14:textId="6FD4F367" w:rsidR="00DA6F5D" w:rsidRDefault="00DA6F5D" w:rsidP="00DA6F5D">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+      </w:pPr>
+      <w:r>
+        <w:t>List paragraph</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="7F7E6414" w14:textId="77DC1624" w:rsidR="00DA6F5D" w:rsidRDefault="00D34D11" w:rsidP="00DA6F5D">
+      <w:r>
+        <w:t>Colored in red</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="775626E9" w14:textId="0BFEF8C2" w:rsidR="003B3AEE" w:rsidRDefault="003B3AEE" w:rsidP="003B3AEE">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+        <w:numPr>
+          <w:ilvl w:val="0"/>
+          <w:numId w:val="3"/>
+        </w:numPr>
+      </w:pPr>
+      <w:r>
+        <w:t>Bulleted list</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="5F1FF99B" w14:textId="790F08C8" w:rsidR="003B3AEE" w:rsidRDefault="003B3AEE" w:rsidP="003B3AEE">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+        <w:numPr>
+          <w:ilvl w:val="0"/>
+          <w:numId w:val="3"/>
+        </w:numPr>
+      </w:pPr>
+      <w:r>
+        <w:t>Bulleted list</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="76FBF8ED" w14:textId="5836A28F" w:rsidR="003B3AEE" w:rsidRDefault="003B3AEE" w:rsidP="003B3AEE">
+      <w:r>
+        <w:t>Or</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="6282C15E" w14:textId="6CBD684F" w:rsidR="003B3AEE" w:rsidRDefault="00F037F9" w:rsidP="00F037F9">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+        <w:numPr>
+          <w:ilvl w:val="0"/>
+          <w:numId w:val="1"/>
+        </w:numPr>
+      </w:pPr>
+      <w:r>
+        <w:t>Numbered list</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="6E899757" w14:textId="2F5B08AA" w:rsidR="00F037F9" w:rsidRDefault="00F037F9" w:rsidP="00F037F9">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+        <w:numPr>
+          <w:ilvl w:val="0"/>
+          <w:numId w:val="1"/>
+        </w:numPr>
+      </w:pPr>
+      <w:r>
+        <w:t>Numbered list</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="033EF435" w14:textId="24459E9F" w:rsidR="00F037F9" w:rsidRDefault="00F037F9" w:rsidP="00F037F9">
+      <w:r>
+        <w:t>Or</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="29E15EB9" w14:textId="573F243A" w:rsidR="00F037F9" w:rsidRDefault="00F037F9" w:rsidP="00F037F9">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+        <w:numPr>
+          <w:ilvl w:val="0"/>
+          <w:numId w:val="2"/>
+        </w:numPr>
+      </w:pPr>
+      <w:r>
+        <w:t>Numbered list</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="22E1D190" w14:textId="29064D12" w:rsidR="00F037F9" w:rsidRDefault="00F037F9" w:rsidP="00F037F9">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+        <w:numPr>
+          <w:ilvl w:val="1"/>
+          <w:numId w:val="2"/>
+        </w:numPr>
+      </w:pPr>
+      <w:r>
+        <w:t>Indented item</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="0E630B44" w14:textId="522A8B18" w:rsidR="00F037F9" w:rsidRDefault="00F037F9" w:rsidP="00F037F9">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+        <w:numPr>
+          <w:ilvl w:val="0"/>
+          <w:numId w:val="2"/>
+        </w:numPr>
+      </w:pPr>
+      <w:r>
+        <w:t>Numbered list</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="2EE66649" w14:textId="7B45E815" w:rsidR="00D34D11" w:rsidRDefault="00D34D11" w:rsidP="00DA6F5D">
+      <w:r>
+        <w:t>Highlighted in Yellow</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="410FCBBF" w14:textId="4CFDCECB" w:rsidR="005A399C" w:rsidRDefault="005A399C" w:rsidP="00DA6F5D">
+      <w:r>
+        <w:t xml:space="preserve">This is an </w:t>
+      </w:r>
+      <w:r w:rsidRPr="004014A6">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>important</w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve"> text!</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="50943A14" w14:textId="26B4C62A" w:rsidR="00D34D11" w:rsidRDefault="003B3AEE" w:rsidP="00061E13">
+      <w:pPr>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:t xml:space="preserve">Aligned Right </w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="4372BCC4" w14:textId="041E80B3" w:rsidR="00061E13" w:rsidRDefault="00061E13" w:rsidP="00061E13">
+      <w:pPr>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:t xml:space="preserve">Trying things with </w:t>
+      </w:r>
+      <w:proofErr w:type="gramStart"/>
+      <w:r>
+        <w:t>col</w:t>
+      </w:r>
+      <w:r w:rsidR="00F74648">
+        <w:t>ons</w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve"> :</w:t>
+      </w:r>
+      <w:proofErr w:type="gramEnd"/>
+      <w:r>
+        <w:t xml:space="preserve"> </w:t>
+      </w:r>
+      <w:r w:rsidR="007F5741">
+        <w:t>here is what happens when there is a col</w:t>
+      </w:r>
+      <w:r w:rsidR="00F74648">
+        <w:t>on.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="69DC9D1F" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA">
+      <w:r>
+        <w:lastRenderedPageBreak/>
+        <w:t>The alarm rang before the sun had fully climbed the sky, and the boy pulled the blanket tighter around his shoulders. School waited for him beyond the bedroom door—long hallways, sharp pencils, questions he was never sure how to answer. The thought of it made his stomach knot. If he stayed very still, he thought, perhaps the day would forget him.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="4F849F7A" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA"/>
+    <w:p w14:paraId="2DE6F6C5" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA">
+      <w:r>
+        <w:t xml:space="preserve">His mother knocked softly and called his name. He did not answer. He imagined the clock </w:t>
+      </w:r>
+      <w:r w:rsidRPr="000C6147">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>slowing down</w:t>
+      </w:r>
+      <w:r>
+        <w:t>, imagined the school bell ringing without him. Outside, a bus hissed to a stop, then groaned away. He smiled for a moment, triumphant, until the quiet felt heavier than the noise ever did.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="1095A92E" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA"/>
+    <w:p w14:paraId="5887F35F" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA">
+      <w:r>
+        <w:t>He sat up and stared at the wall where a faded poster hung, corners peeling. Yesterday, his teacher had asked him to read aloud. His voice had shaken, and he had felt every pair of eyes turn toward him. The memory burned. Why walk back into that?</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="72905D0C" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA"/>
+    <w:p w14:paraId="274E97E3" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA">
+      <w:r>
+        <w:t xml:space="preserve">At breakfast, he pushed his </w:t>
+      </w:r>
+      <w:r w:rsidRPr="00EC3151">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>cereal</w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve"> around the bowl. His mother did not scold him or hurry him. She only said, calmly, that some days were hard, and that being afraid did not mean he was weak. She reminded him of the science project he had almost finished, of the friend who waited for him at the gate every morning.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="0D25A2FB" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA"/>
+    <w:p w14:paraId="77EA1D8B" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA">
+      <w:r>
+        <w:t xml:space="preserve">The </w:t>
+      </w:r>
+      <w:r w:rsidRPr="00EC3151">
+        <w:rPr>
+          <w:color w:val="EE0000"/>
+        </w:rPr>
+        <w:t>boy slipped on his backpack</w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve">, surprised by how light it felt. The walk to the bus stop seemed shorter than usual. When the bus doors folded open, he </w:t>
+      </w:r>
+      <w:r w:rsidRPr="00A136AE">
+        <w:rPr>
+          <w:sz w:val="36"/>
+          <w:szCs w:val="36"/>
+        </w:rPr>
+        <w:t>hesitated</w:t>
+      </w:r>
+      <w:r>
+        <w:t>, then stepped inside.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="6B7C5DB2" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA"/>
+    <w:p w14:paraId="7B4289F1" w14:textId="1D236DC7" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA">
+      <w:r>
+        <w:t>As the bus pulled away, he looked out the window. He still did not want to go, not really—but he went anyway. And for the first time that morning, he felt proud of himself.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="5B27E8B2" w14:textId="77777777" w:rsidR="003B3AEE" w:rsidRPr="007E4F59" w:rsidRDefault="003B3AEE" w:rsidP="00DA6F5D"/>
+    <w:sectPr w:rsidR="003B3AEE" w:rsidRPr="007E4F59">
+      <w:pgSz w:w="12240" w:h="15840"/>
+      <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/>
+      <w:cols w:space="720"/>
+      <w:docGrid w:linePitch="360"/>
+    </w:sectPr>
+  </w:body>
+</w:document>`;
+
+    // IMPORTANT:
+    // Replace the placeholder comment above with the FULL XML you provided (entire <w:body>…</w:body> content).
+    // GitHub Pages will serve exactly what’s in this file.
+
+    // ==== 2) Parsing helpers ====
+    const qn = (local) => `w:${local}`;
+    const firstChild = (el, tag) => el ? (Array.from(el.getElementsByTagName(tag))[0] ?? null) : null;
+    const directChildren = (el, tag) => el ? Array.from(el.childNodes).filter(n => n.nodeType === 1 && n.tagName === tag) : [];
+    const getAttr = (el, name) => el ? el.getAttribute(name) : null;
+
+    function textOfRun(rEl){
+      const tEls = Array.from(rEl.getElementsByTagName(qn("t")));
+      return tEls.map(t => t.textContent ?? "").join("");
+    }
+
+    function parseRun(rEl, idx, pIdx){
+      const rPr = firstChild(rEl, qn("rPr"));
+      const bold = !!firstChild(rPr, qn("b"));
+      const italic = !!firstChild(rPr, qn("i"));
+      const underlineEl = firstChild(rPr, qn("u"));
+      const underline = underlineEl ? (getAttr(underlineEl, "w:val") ?? "single") : null;
+      const colorEl = firstChild(rPr, qn("color"));
+      const color = colorEl ? getAttr(colorEl, "w:val") : null;
+      const szEl = firstChild(rPr, qn("sz"));
+      const szHalfPoints = szEl ? Number(getAttr(szEl, "w:val")) : null;
+      const fontsEl = firstChild(rPr, qn("rFonts"));
+      const fontAscii = fontsEl ? getAttr(fontsEl, "w:ascii") : null;
+      const rStyleEl = firstChild(rPr, qn("rStyle"));
+      const rStyle = rStyleEl ? getAttr(rStyleEl, "w:val") : null;
+      const text = textOfRun(rEl);
+
+      return {
+        id: `p${pIdx}-r${idx}`,
+        type: "w:r",
+        name: `run ${idx + 1}`,
+        props: { bold, italic, underline, color, fontAscii, szHalfPoints, rStyle },
+        text,
+        children: []
+      };
+    }
+
+    function parseParagraph(pEl, idx){
+      const pPr = firstChild(pEl, qn("pPr"));
+      const pStyleEl = firstChild(pPr, qn("pStyle"));
+      const pStyle = pStyleEl ? getAttr(pStyleEl, "w:val") : null;
+
+      const jcEl = firstChild(pPr, qn("jc"));
+      const align = jcEl ? getAttr(jcEl, "w:val") : null;
+
+      const numPr = firstChild(pPr, qn("numPr"));
+      const ilvlEl = firstChild(numPr, qn("ilvl"));
+      const numIdEl = firstChild(numPr, qn("numId"));
+      const list = numPr ? {
+        ilvl: ilvlEl ? Number(getAttr(ilvlEl, "w:val")) : 0,
+        numId: numIdEl ? Number(getAttr(numIdEl, "w:val")) : null
+      } : null;
+
+      const paraId = getAttr(pEl, "w14:paraId") ?? getAttr(pEl, "w:paraId") ?? null;
+
+      const runs = directChildren(pEl, qn("r")).map((rEl, rIdx) => parseRun(rEl, rIdx, idx));
+      const plainText = runs.map(r => r.text).join("");
+
+      return {
+        id: `p${idx}`,
+        type: "w:p",
+        name: `paragraph ${idx + 1}`,
+        props: { paraId, pStyle, align, list },
+        text: plainText,
+        children: runs
+      };
+    }
+
+    function parseDocument(xml){
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xml, "application/xml");
+      const parseError = doc.getElementsByTagName("parsererror")[0];
+      if (parseError) throw new Error(parseError.textContent ?? "XML parse error");
+
+      const body = doc.getElementsByTagName(qn("body"))[0];
+      const pEls = body ? Array.from(body.getElementsByTagName(qn("p"))) : [];
+      const paragraphs = pEls.map((pEl, idx) => parseParagraph(pEl, idx));
+
+      return {
+        tree: {
+          id: "root", type: "w:document", name: "document", props: {}, text: "",
+          children: [{ id:"body", type:"w:body", name:"body", props:{}, text:"", children: paragraphs }]
+        },
+        paragraphs
+      };
+    }
+
+    function findNodeById(node, id){
+      if (!node) return null;
+      if (node.id === id) return node;
+      for (const c of (node.children || [])){
+        const hit = findNodeById(c, id);
+        if (hit) return hit;
+      }
+      return null;
+    }
+
+    // ==== 3) Rendering ====
+    const $tree = document.getElementById("tree");
+    const $filter = document.getElementById("filter");
+    const $meta = document.getElementById("meta");
+    const $props = document.getElementById("props");
+    const $preview = document.getElementById("preview");
+    const $json = document.getElementById("json");
+    const $selHint = document.getElementById("selHint");
+
+    let PARSED, ALL_PARAS, FILTERED_PARAS, FILTERED_TREE;
+    let selectedId = "p0";
+    let openSet = new Set(["root","body"]); // default expanded
+
+    function kvRow(k, v){
+      const div = document.createElement("div");
+      div.className = "kv";
+      const kk = document.createElement("div");
+      kk.className = "k";
+      kk.textContent = k;
+      const vv = document.createElement("div");
+      vv.className = "v";
+      if (v === null || v === undefined || v === "") { vv.classList.add("dim"); vv.textContent = "—"; }
+      else vv.textContent = String(v);
+      div.appendChild(kk); div.appendChild(vv);
+      return div;
+    }
+
+    function runSpan(run){
+      const s = document.createElement("span");
+      const p = run.props || {};
+      s.textContent = run.text || "";
+      s.style.whiteSpace = "pre-wrap";
+      if (p.bold) s.style.fontWeight = "700";
+      if (p.italic) s.style.fontStyle = "italic";
+      if (p.underline) s.style.textDecoration = "underline";
+      if (p.fontAscii) s.style.fontFamily = p.fontAscii;
+      if (typeof p.szHalfPoints === "number") s.style.fontSize = (p.szHalfPoints/2) + "pt";
+      if (p.color) s.style.color = "#" + p.color;
+      if (p.rStyle === "SubtleEmphasis") s.style.opacity = "0.8";
+      s.title = JSON.stringify(p, null, 2);
+      return s;
+    }
+
+    function paragraphEl(para){
+      const wrap = document.createElement("div");
+      wrap.className = "previewItem" + (para.id === selectedId ? " sel" : "");
+      wrap.addEventListener("click", () => { selectedId = para.id; renderAll(); });
+
+      const p = document.createElement("div");
+      p.className = "p";
+
+      const { pStyle, align, list } = para.props || {};
+      if (align === "right") p.style.textAlign = "right";
+      else if (align === "center") p.style.textAlign = "center";
+      else if (align === "both") p.style.textAlign = "justify";
+
+      const isTitle = pStyle === "Title";
+      const isH1 = pStyle === "Heading1";
+      p.style.fontSize = isTitle ? "22px" : isH1 ? "18px" : "14px";
+      p.style.fontWeight = (isTitle || isH1) ? "700" : "400";
+
+      const bullet = list && list.numId === 3;
+      const number = list && (list.numId === 1 || list.numId === 2);
+      const indentLevel = list ? Math.min(4, Math.max(0, list.ilvl || 0)) : 0;
+      p.style.paddingLeft = (indentLevel * 18) + "px";
+
+      if (bullet || number){
+        const mark = document.createElement("span");
+        mark.textContent = bullet ? "• " : "1. ";
+        mark.style.color = "#64748b";
+        mark.style.userSelect = "none";
+        p.appendChild(mark);
+      }
+
+      if (para.children && para.children.length){
+        para.children.forEach(r => p.appendChild(runSpan(r)));
+      } else {
+        const em = document.createElement("span");
+        em.textContent = "(empty paragraph)";
+        em.style.color = "#94a3b8";
+        p.appendChild(em);
+      }
+
+      wrap.appendChild(p);
+      return wrap;
+    }
+
+    function nodeRow(node, depth){
+      const row = document.createElement("div");
+      row.className = "node" + (node.id === selectedId ? " sel" : "");
+      row.style.paddingLeft = (8 + depth*14) + "px";
+
+      const hasChildren = node.children && node.children.length;
+      const isOpen = openSet.has(node.id);
+
+      const tw = document.createElement("div");
+      tw.className = "tw";
+      tw.textContent = hasChildren ? (isOpen ? "▾" : "▸") : "";
+      tw.style.opacity = hasChildren ? "1" : "0";
+      tw.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (!hasChildren) return;
+        if (isOpen) openSet.delete(node.id);
+        else openSet.add(node.id);
+        renderTree();
+      });
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      const r1 = document.createElement("div");
+      r1.className = "row";
+      const name = document.createElement("div");
+      name.className = "name";
+      name.textContent = node.name;
+      const type = document.createElement("div");
+      type.className = "type";
+      type.textContent = node.type;
+      r1.appendChild(name); r1.appendChild(type);
+
+      meta.appendChild(r1);
+
+      if (node.text){
+        const t = document.createElement("div");
+        t.className = "txt";
+        t.textContent = node.text.replace(/\s+/g, " ");
+        meta.appendChild(t);
+      }
+
+      row.appendChild(tw);
+      row.appendChild(meta);
+
+      row.addEventListener("click", () => {
+        selectedId = node.id;
+        renderAll();
+      });
+
+      return row;
+    }
+
+    function renderTree(){
+      $tree.innerHTML = "";
+      const root = FILTERED_TREE;
+      function walk(node, depth){
+        $tree.appendChild(nodeRow(node, depth));
+        const hasChildren = node.children && node.children.length;
+        if (hasChildren && openSet.has(node.id)){
+          node.children.forEach(c => walk(c, depth+1));
+        }
+      }
+      walk(root, 0);
+    }
+
+    function renderInspector(){
+      const node = findNodeById(FILTERED_TREE, selectedId) || findNodeById(PARSED.tree, selectedId);
+      if (!node) return;
+
+      $selHint.textContent = `${node.type} · ${node.id}`;
+
+      $meta.innerHTML = "";
+      $meta.appendChild(kvRow("name", node.name));
+      $meta.appendChild(kvRow("type", node.type));
+      $meta.appendChild(kvRow("text", node.text ? node.text.replace(/\s+/g, " ") : ""));
+      $meta.appendChild(kvRow("children", (node.children && node.children.length) ? node.children.length : 0));
+
+      $props.innerHTML = "";
+      const props = node.props || {};
+      const keys = Object.keys(props);
+      if (!keys.length){
+        const d = document.createElement("div");
+        d.style.color = "#64748b";
+        d.style.fontSize = "13px";
+        d.textContent = "No properties on this node.";
+        $props.appendChild(d);
+      } else {
+        keys.forEach(k => {
+          const v = (typeof props[k] === "object") ? JSON.stringify(props[k]) : props[k];
+          $props.appendChild(kvRow(k, v));
+        });
+      }
+    }
+
+    function renderPreview(){
+      $preview.innerHTML = "";
+      FILTERED_PARAS.forEach(p => $preview.appendChild(paragraphEl(p)));
+    }
+
+    function renderJSON(){
+      $json.textContent = JSON.stringify(FILTERED_TREE, null, 2);
+    }
+
+    function renderAll(){
+      renderTree();
+      renderInspector();
+      renderPreview();
+      renderJSON();
+    }
+
+    function applyFilter(){
+      const q = $filter.value.trim().toLowerCase();
+      if (!q){
+        FILTERED_PARAS = ALL_PARAS.slice();
+        FILTERED_TREE = PARSED.tree;
+      } else {
+        FILTERED_PARAS = ALL_PARAS.filter(p => (p.text || "").toLowerCase().includes(q));
+        FILTERED_TREE = {
+          ...PARSED.tree,
+          children: [{
+            id:"body", type:"w:body",
+            name:`body (filtered: ${FILTERED_PARAS.length}/${ALL_PARAS.length})`,
+            props:{}, text:"", children: FILTERED_PARAS
+          }]
+        };
+        openSet.add("root"); openSet.add("body");
+      }
+      if (!findNodeById(FILTERED_TREE, selectedId)) selectedId = FILTERED_PARAS[0]?.id || "body";
+      renderAll();
+    }
+
+    // ==== 4) Boot ====
+    try{
+      PARSED = parseDocument(XML_SOURCE);
+      ALL_PARAS = PARSED.paragraphs;
+      FILTERED_PARAS = ALL_PARAS.slice();
+      FILTERED_TREE = PARSED.tree;
+      renderAll();
+      $filter.addEventListener("input", applyFilter);
+    } catch (e){
+      document.body.innerHTML =
+        '<div style="max-width:900px;margin:40px auto;padding:20px;font-family:system-ui">' +
+        '<h2>Failed to parse XML</h2>' +
+        '<pre style="white-space:pre-wrap;background:#0b1220;color:#e2e8f0;padding:14px;border-radius:12px">' +
+        (e && e.message ? e.message : String(e)) +
+        '</pre></div>';
+    }
+  </script>
+</body>
+</html>
