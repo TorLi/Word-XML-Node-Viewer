@@ -383,6 +383,16 @@
 
         <div class="card">
           <div class="card-h">
+            <div class="title">Runs (EN ↔ FR)</div>
+            <div class="hint">Side-by-side runs for current paragraph</div>
+          </div>
+          <div class="card-b">
+            <div id="runsCompare"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
             <div class="title">Rendered preview</div>
             <div class="hint">(basic: b/i/u/color/font/size, alignment, simple lists)</div>
           </div>
@@ -1396,7 +1406,7 @@
     const $selHint = document.getElementById("selHint");
     const $rawXml = document.getElementById("rawXml");
 
-    let PARSED, ALL_PARAS, FILTERED_PARAS, FILTERED_TREE;
+    let PARSED, ALL_PARAS, ALL_PARAS_FR, FILTERED_PARAS, FILTERED_TREE;
     let selectedId = "p0";
     let openSet = new Set(["root", "body"]); // default expanded
     let PARA_TRANSLATIONS = {};
@@ -1575,6 +1585,75 @@
       }
     }
 
+    function renderRunsCompare() {
+      const container = document.getElementById("runsCompare");
+      container.innerHTML = "";
+
+      const node = findNodeById(FILTERED_TREE, selectedId) || findNodeById(PARSED.tree, selectedId);
+      if (!node) return;
+
+      // Determine the paragraph index from the node id (e.g. "p3" or "p3-r1")
+      let pIdx = null;
+      if (node.type === "w:p") {
+        pIdx = Number(node.id.replace(/^p/, ""));
+      } else if (node.type === "w:r") {
+        const m = node.id.match(/^p(\d+)-r/);
+        if (m) pIdx = Number(m[1]);
+      }
+
+      if (pIdx == null || !ALL_PARAS || !ALL_PARAS[pIdx] || !ALL_PARAS_FR || !ALL_PARAS_FR[pIdx]) {
+        const info = document.createElement("div");
+        info.style.fontSize = "12px";
+        info.style.color = "#64748b";
+        info.textContent = "Select a paragraph (or its run) to see per-run comparison.";
+        container.appendChild(info);
+        return;
+      }
+
+      const paraEn = ALL_PARAS[pIdx];
+      const paraFr = ALL_PARAS_FR[pIdx];
+      const runsEn = paraEn.children || [];
+      const runsFr = paraFr.children || [];
+      const maxLen = Math.max(runsEn.length, runsFr.length);
+
+      const table = document.createElement("table");
+      table.style.width = "100%";
+      table.style.borderCollapse = "collapse";
+      table.style.fontSize = "12px";
+
+      const makeCell = (text, isHeader) => {
+        const el = document.createElement(isHeader ? "th" : "td");
+        el.textContent = text;
+        el.style.borderBottom = "1px solid #e2e8f0";
+        el.style.padding = "4px 6px";
+        el.style.verticalAlign = "top";
+        if (!isHeader) el.style.fontWeight = "400";
+        return el;
+      };
+
+      const thead = document.createElement("thead");
+      const hr = document.createElement("tr");
+      hr.appendChild(makeCell("#", true));
+      hr.appendChild(makeCell("EN run text", true));
+      hr.appendChild(makeCell("FR run text", true));
+      thead.appendChild(hr);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      for (let i = 0; i < maxLen; i++) {
+        const rEn = runsEn[i];
+        const rFr = runsFr[i];
+        const tr = document.createElement("tr");
+        tr.appendChild(makeCell(String(i + 1), false));
+        tr.appendChild(makeCell(rEn && rEn.text ? rEn.text : "—", false));
+        tr.appendChild(makeCell(rFr && rFr.text ? rFr.text : "—", false));
+        tbody.appendChild(tr);
+      }
+      table.appendChild(tbody);
+
+      container.appendChild(table);
+    }
+
     function renderPreview() {
       $preview.innerHTML = "";
       FILTERED_PARAS.forEach(p => {
@@ -1600,6 +1679,7 @@
     function renderAll() {
       renderTree();
       renderInspector();
+      renderRunsCompare();
       renderPreview();
       renderJSON();
       renderRawXml();
@@ -1630,16 +1710,14 @@
     try {
       PARSED = parseDocument(XML_SOURCE);
       ALL_PARAS = PARSED.paragraphs;
-      FILTERED_PARAS = ALL_PARAS.slice();
-      FILTERED_TREE = PARSED.tree;
 
-      // Build per-paragraph translations from the embedded French XML
+      // Parse French document and keep paragraph list and full-text map
       try {
         const parsedFr = parseDocument(XML_SOURCE_FR);
-        const parasFr = parsedFr.paragraphs;
+        ALL_PARAS_FR = parsedFr.paragraphs;
         PARA_TRANSLATIONS = {};
         ALL_PARAS.forEach((p, idx) => {
-          const fr = parasFr[idx];
+          const fr = ALL_PARAS_FR[idx];
           if (fr && fr.text) {
             PARA_TRANSLATIONS[p.id] = fr.text;
           }
@@ -1647,6 +1725,9 @@
       } catch (e2) {
         console.warn("Failed to parse French XML or map translations:", e2);
       }
+
+      FILTERED_PARAS = ALL_PARAS.slice();
+      FILTERED_TREE = PARSED.tree;
 
       renderAll();
       $filter.addEventListener("input", applyFilter);
