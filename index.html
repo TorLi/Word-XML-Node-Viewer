@@ -384,6 +384,18 @@
           </div>
         </div>
 
+        <div class="card">
+          <div class="card-h">
+            <div>
+              <div class="title">Raw document.xml</div>
+              <div class="hint">Full WordprocessingML source</div>
+            </div>
+          </div>
+          <div class="card-b">
+            <pre class="code" id="rawXml"></pre>
+          </div>
+        </div>
+
         <div class="note">
           Notes: This viewer focuses on paragraph + run structure from your snippet. WordprocessingML has many more
           constructs (tables, drawings, numbering definitions, style inheritance, themes, etc.).
@@ -898,7 +910,7 @@
       return {
         id: `p${idx}`,
         type: "w:p",
-        name: `paragraph ${idx + 1}`,
+        name: paraId ? `paragraph ${paraId}` : `paragraph ${idx + 1}`,
         props: { paraId, pStyle, align, list },
         text: plainText,
         children: runs
@@ -942,6 +954,7 @@
     const $preview = document.getElementById("preview");
     const $json = document.getElementById("json");
     const $selHint = document.getElementById("selHint");
+    const $rawXml = document.getElementById("rawXml");
 
     let PARSED, ALL_PARAS, FILTERED_PARAS, FILTERED_TREE;
     let selectedId = "p0";
@@ -1124,11 +1137,16 @@
       $json.textContent = JSON.stringify(FILTERED_TREE, null, 2);
     }
 
+    function renderRawXml() {
+      $rawXml.textContent = XML_SOURCE;
+    }
+
     function renderAll() {
       renderTree();
       renderInspector();
       renderPreview();
       renderJSON();
+      renderRawXml();
     }
 
     function applyFilter() {
