@@ -1,64 +1,319 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>WordprocessingML Node Viewer</title>
   <style>
-    :root{
-      --bg:#f8fafc; --card:#fff; --border:#e2e8f0; --text:#0f172a; --muted:#64748b;
+    :root {
+      --bg: #f8fafc;
+      --card: #fff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
     }
-    *{box-sizing:border-box}
-    body{margin:0; font-family:var(--sans); background:var(--bg); color:var(--text)}
-    .wrap{max-width:1200px; margin:0 auto; padding:20px}
-    .top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap}
-    h1{margin:0; font-size:20px}
-    .sub{margin-top:4px; color:var(--muted); font-size:13px}
-    .tags{display:flex; gap:8px; flex-wrap:wrap}
-    .tag{border:1px solid var(--border); border-radius:999px; padding:4px 8px; font-size:12px; color:#334155; background:#fff}
-    .grid{display:grid; grid-template-columns: 1fr; gap:14px; margin-top:14px}
-    @media(min-width:1000px){ .grid{grid-template-columns: 420px 1fr} }
-    .card{background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:0 1px 2px rgba(0,0,0,.03)}
-    .card-h{padding:12px 12px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; gap:10px}
-    .card-h .title{font-weight:700; font-size:13px}
-    .card-h .hint{font-size:12px; color:var(--muted)}
-    .card-b{padding:12px}
-    input[type="text"]{width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--border); outline:none; font-size:13px}
-    input[type="text"]:focus{box-shadow:0 0 0 3px rgba(15,23,42,.08)}
-    .scroll{max-height:72vh; overflow:auto; padding:8px}
-    .node{display:flex; align-items:center; gap:8px; padding:8px; border-radius:12px; cursor:pointer}
-    .node:hover{background:#f1f5f9}
-    .node.sel{background:#0f172a; color:#fff}
-    .node .tw{width:20px; height:20px; display:grid; place-items:center; border-radius:8px; user-select:none}
-    .node.sel .tw:hover{background:rgba(255,255,255,.14)}
-    .node:not(.sel) .tw:hover{background:rgba(0,0,0,.06)}
-    .node .meta{min-width:0}
-    .node .row{display:flex; gap:8px; align-items:baseline; min-width:0}
-    .node .name{font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-    .node .type{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-    .node.sel .type{color:rgba(255,255,255,.7)}
-    .node .txt{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px}
-    .node.sel .txt{color:rgba(255,255,255,.7)}
-    .indent{margin-left:14px}
-    .two{display:grid; grid-template-columns: 1fr; gap:12px}
-    @media(min-width:850px){ .two{grid-template-columns: 1fr 1fr} }
-    .box{border:1px solid var(--border); border-radius:16px; padding:12px}
-    .box .t{font-weight:700; font-size:12px}
-    .kv{display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--border)}
-    .kv:last-child{border-bottom:none}
-    .kv .k{font-size:12px; color:var(--muted); font-weight:700}
-    .kv .v{font-size:12px; color:var(--text); text-align:right; word-break:break-word}
-    .v.dim{color:#94a3b8}
-    .previewItem{border-radius:12px; padding:6px 8px}
-    .previewItem:hover{background:#f1f5f9}
-    .previewItem.sel{background:#f1f5f9}
-    .p{padding:8px 0}
-    .code{font-family:var(--mono); font-size:12px; background:#0b1220; color:#e2e8f0; border-radius:14px; padding:12px; max-height:40vh; overflow:auto}
-    .note{font-size:12px; color:var(--muted); margin-top:10px}
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text)
+    }
+
+    .wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px
+    }
+
+    .top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px
+    }
+
+    .sub {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px
+    }
+
+    .tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .tag {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 12px;
+      color: #334155;
+      background: #fff
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 14px
+    }
+
+    @media(min-width:1000px) {
+      .grid {
+        grid-template-columns: 420px 1fr
+      }
+    }
+
+    .grid>* {
+      min-width: 0;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .03);
+      min-width: 0
+    }
+
+    .card-h {
+      padding: 12px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px
+    }
+
+    .card-h .title {
+      font-weight: 700;
+      font-size: 13px
+    }
+
+    .card-h .hint {
+      font-size: 12px;
+      color: var(--muted)
+    }
+
+    .card-b {
+      padding: 12px
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      outline: none;
+      font-size: 13px
+    }
+
+    input[type="text"]:focus {
+      box-shadow: 0 0 0 3px rgba(15, 23, 42, .08)
+    }
+
+    .scroll {
+      max-height: 72vh;
+      overflow: auto;
+      padding: 8px
+    }
+
+    .node {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      border-radius: 12px;
+      cursor: pointer
+    }
+
+    .node:hover {
+      background: #f1f5f9
+    }
+
+    .node.sel {
+      background: #0f172a;
+      color: #fff
+    }
+
+    .node .tw {
+      width: 20px;
+      height: 20px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      user-select: none
+    }
+
+    .node.sel .tw:hover {
+      background: rgba(255, 255, 255, .14)
+    }
+
+    .node:not(.sel) .tw:hover {
+      background: rgba(0, 0, 0, .06)
+    }
+
+    .node .meta {
+      min-width: 0
+    }
+
+    .node .row {
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+      min-width: 0
+    }
+
+    .node .name {
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .node .type {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .node.sel .type {
+      color: rgba(255, 255, 255, .7)
+    }
+
+    .node .txt {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px
+    }
+
+    .node.sel .txt {
+      color: rgba(255, 255, 255, .7)
+    }
+
+    .indent {
+      margin-left: 14px
+    }
+
+    .two {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px
+    }
+
+    @media(min-width:850px) {
+      .two {
+        grid-template-columns: 1fr 1fr
+      }
+    }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px
+    }
+
+    .box .t {
+      font-weight: 700;
+      font-size: 12px
+    }
+
+    .kv {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .kv:last-child {
+      border-bottom: none
+    }
+
+    .kv .k {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700
+    }
+
+    .kv .v {
+      font-size: 12px;
+      color: var(--text);
+      text-align: right;
+      word-break: break-word
+    }
+
+    .v.dim {
+      color: #94a3b8
+    }
+
+    .previewItem {
+      border-radius: 12px;
+      padding: 6px 8px
+    }
+
+    .previewItem:hover {
+      background: #f1f5f9
+    }
+
+    .previewItem.sel {
+      background: #f1f5f9
+    }
+
+    .p {
+      padding: 8px 0
+    }
+
+    .code {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: #0b1220;
+      color: #e2e8f0;
+      border-radius: 14px;
+      padding: 12px;
+      max-height: 40vh;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 14px
+    }
+
+    .note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px
+    }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <div class="top">
@@ -89,7 +344,7 @@
       </div>
 
       <!-- RIGHT -->
-      <div style="display:flex; flex-direction:column; gap:14px">
+      <div class="stack">
         <div class="card">
           <div class="card-h">
             <div class="title">Selected node</div>
@@ -130,7 +385,8 @@
         </div>
 
         <div class="note">
-          Notes: This viewer focuses on paragraph + run structure from your snippet. WordprocessingML has many more constructs (tables, drawings, numbering definitions, style inheritance, themes, etc.).
+          Notes: This viewer focuses on paragraph + run structure from your snippet. WordprocessingML has many more
+          constructs (tables, drawings, numbering definitions, style inheritance, themes, etc.).
         </div>
       </div>
     </div>
@@ -587,12 +843,12 @@
     const directChildren = (el, tag) => el ? Array.from(el.childNodes).filter(n => n.nodeType === 1 && n.tagName === tag) : [];
     const getAttr = (el, name) => el ? el.getAttribute(name) : null;
 
-    function textOfRun(rEl){
+    function textOfRun(rEl) {
       const tEls = Array.from(rEl.getElementsByTagName(qn("t")));
       return tEls.map(t => t.textContent ?? "").join("");
     }
 
-    function parseRun(rEl, idx, pIdx){
+    function parseRun(rEl, idx, pIdx) {
       const rPr = firstChild(rEl, qn("rPr"));
       const bold = !!firstChild(rPr, qn("b"));
       const italic = !!firstChild(rPr, qn("i"));
@@ -618,7 +874,7 @@
       };
     }
 
-    function parseParagraph(pEl, idx){
+    function parseParagraph(pEl, idx) {
       const pPr = firstChild(pEl, qn("pPr"));
       const pStyleEl = firstChild(pPr, qn("pStyle"));
       const pStyle = pStyleEl ? getAttr(pStyleEl, "w:val") : null;
@@ -649,7 +905,7 @@
       };
     }
 
-    function parseDocument(xml){
+    function parseDocument(xml) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(xml, "application/xml");
       const parseError = doc.getElementsByTagName("parsererror")[0];
@@ -662,16 +918,16 @@
       return {
         tree: {
           id: "root", type: "w:document", name: "document", props: {}, text: "",
-          children: [{ id:"body", type:"w:body", name:"body", props:{}, text:"", children: paragraphs }]
+          children: [{ id: "body", type: "w:body", name: "body", props: {}, text: "", children: paragraphs }]
         },
         paragraphs
       };
     }
 
-    function findNodeById(node, id){
+    function findNodeById(node, id) {
       if (!node) return null;
       if (node.id === id) return node;
-      for (const c of (node.children || [])){
+      for (const c of (node.children || [])) {
         const hit = findNodeById(c, id);
         if (hit) return hit;
       }
@@ -689,9 +945,9 @@
 
     let PARSED, ALL_PARAS, FILTERED_PARAS, FILTERED_TREE;
     let selectedId = "p0";
-    let openSet = new Set(["root","body"]); // default expanded
+    let openSet = new Set(["root", "body"]); // default expanded
 
-    function kvRow(k, v){
+    function kvRow(k, v) {
       const div = document.createElement("div");
       div.className = "kv";
       const kk = document.createElement("div");
@@ -705,7 +961,7 @@
       return div;
     }
 
-    function runSpan(run){
+    function runSpan(run) {
       const s = document.createElement("span");
       const p = run.props || {};
       s.textContent = run.text || "";
@@ -714,14 +970,14 @@
       if (p.italic) s.style.fontStyle = "italic";
       if (p.underline) s.style.textDecoration = "underline";
       if (p.fontAscii) s.style.fontFamily = p.fontAscii;
-      if (typeof p.szHalfPoints === "number") s.style.fontSize = (p.szHalfPoints/2) + "pt";
+      if (typeof p.szHalfPoints === "number") s.style.fontSize = (p.szHalfPoints / 2) + "pt";
       if (p.color) s.style.color = "#" + p.color;
       if (p.rStyle === "SubtleEmphasis") s.style.opacity = "0.8";
       s.title = JSON.stringify(p, null, 2);
       return s;
     }
 
-    function paragraphEl(para){
+    function paragraphEl(para) {
       const wrap = document.createElement("div");
       wrap.className = "previewItem" + (para.id === selectedId ? " sel" : "");
       wrap.addEventListener("click", () => { selectedId = para.id; renderAll(); });
@@ -744,7 +1000,7 @@
       const indentLevel = list ? Math.min(4, Math.max(0, list.ilvl || 0)) : 0;
       p.style.paddingLeft = (indentLevel * 18) + "px";
 
-      if (bullet || number){
+      if (bullet || number) {
         const mark = document.createElement("span");
         mark.textContent = bullet ? "• " : "1. ";
         mark.style.color = "#64748b";
@@ -752,7 +1008,7 @@
         p.appendChild(mark);
       }
 
-      if (para.children && para.children.length){
+      if (para.children && para.children.length) {
         para.children.forEach(r => p.appendChild(runSpan(r)));
       } else {
         const em = document.createElement("span");
@@ -765,10 +1021,10 @@
       return wrap;
     }
 
-    function nodeRow(node, depth){
+    function nodeRow(node, depth) {
       const row = document.createElement("div");
       row.className = "node" + (node.id === selectedId ? " sel" : "");
-      row.style.paddingLeft = (8 + depth*14) + "px";
+      row.style.paddingLeft = (8 + depth * 14) + "px";
 
       const hasChildren = node.children && node.children.length;
       const isOpen = openSet.has(node.id);
@@ -799,7 +1055,7 @@
 
       meta.appendChild(r1);
 
-      if (node.text){
+      if (node.text) {
         const t = document.createElement("div");
         t.className = "txt";
         t.textContent = node.text.replace(/\s+/g, " ");
@@ -817,20 +1073,20 @@
       return row;
     }
 
-    function renderTree(){
+    function renderTree() {
       $tree.innerHTML = "";
       const root = FILTERED_TREE;
-      function walk(node, depth){
+      function walk(node, depth) {
         $tree.appendChild(nodeRow(node, depth));
         const hasChildren = node.children && node.children.length;
-        if (hasChildren && openSet.has(node.id)){
-          node.children.forEach(c => walk(c, depth+1));
+        if (hasChildren && openSet.has(node.id)) {
+          node.children.forEach(c => walk(c, depth + 1));
         }
       }
       walk(root, 0);
     }
 
-    function renderInspector(){
+    function renderInspector() {
       const node = findNodeById(FILTERED_TREE, selectedId) || findNodeById(PARSED.tree, selectedId);
       if (!node) return;
 
@@ -845,7 +1101,7 @@
       $props.innerHTML = "";
       const props = node.props || {};
       const keys = Object.keys(props);
-      if (!keys.length){
+      if (!keys.length) {
         const d = document.createElement("div");
         d.style.color = "#64748b";
         d.style.fontSize = "13px";
@@ -859,25 +1115,25 @@
       }
     }
 
-    function renderPreview(){
+    function renderPreview() {
       $preview.innerHTML = "";
       FILTERED_PARAS.forEach(p => $preview.appendChild(paragraphEl(p)));
     }
 
-    function renderJSON(){
+    function renderJSON() {
       $json.textContent = JSON.stringify(FILTERED_TREE, null, 2);
     }
 
-    function renderAll(){
+    function renderAll() {
       renderTree();
       renderInspector();
       renderPreview();
       renderJSON();
     }
 
-    function applyFilter(){
+    function applyFilter() {
       const q = $filter.value.trim().toLowerCase();
-      if (!q){
+      if (!q) {
         FILTERED_PARAS = ALL_PARAS.slice();
         FILTERED_TREE = PARSED.tree;
       } else {
@@ -885,9 +1141,9 @@
         FILTERED_TREE = {
           ...PARSED.tree,
           children: [{
-            id:"body", type:"w:body",
-            name:`body (filtered: ${FILTERED_PARAS.length}/${ALL_PARAS.length})`,
-            props:{}, text:"", children: FILTERED_PARAS
+            id: "body", type: "w:body",
+            name: `body (filtered: ${FILTERED_PARAS.length}/${ALL_PARAS.length})`,
+            props: {}, text: "", children: FILTERED_PARAS
           }]
         };
         openSet.add("root"); openSet.add("body");
@@ -897,14 +1153,14 @@
     }
 
     // ==== 4) Boot ====
-    try{
+    try {
       PARSED = parseDocument(XML_SOURCE);
       ALL_PARAS = PARSED.paragraphs;
       FILTERED_PARAS = ALL_PARAS.slice();
       FILTERED_TREE = PARSED.tree;
       renderAll();
       $filter.addEventListener("input", applyFilter);
-    } catch (e){
+    } catch (e) {
       document.body.innerHTML =
         '<div style="max-width:900px;margin:40px auto;padding:20px;font-family:system-ui">' +
         '<h2>Failed to parse XML</h2>' +
@@ -914,4 +1170,5 @@
     }
   </script>
 </body>
+
 </html>
