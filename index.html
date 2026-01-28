@@ -311,6 +311,22 @@
       color: var(--muted);
       margin-top: 10px
     }
+
+    .txt-trans {
+      font-size: 11px;
+      color: #16a34a;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .preview-trans {
+      font-size: 12px;
+      color: #16a34a;
+      margin-top: 2px;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 
@@ -325,6 +341,7 @@
         <span class="tag">DOMParser</span>
         <span class="tag">Node Tree</span>
         <span class="tag">Rich Preview</span>
+        <span class="tag">Translation (FR)</span>
       </div>
     </div>
 
@@ -845,9 +862,432 @@
   </w:body>
 </w:document>`;
 
-    // IMPORTANT:
-    // Replace the placeholder comment above with the FULL XML you provided (entire <w:body>…</w:body> content).
-    // GitHub Pages will serve exactly what’s in this file.
+    // Translated French version of the same document (same structure/order of paragraphs)
+    const XML_SOURCE_FR = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex" xmlns:cx1="http://schemas.microsoft.com/office/drawing/2015/9/8/chartex" xmlns:cx2="http://schemas.microsoft.com/office/drawing/2015/10/21/chartex" xmlns:cx3="http://schemas.microsoft.com/office/drawing/2016/5/9/chartex" xmlns:cx4="http://schemas.microsoft.com/office/drawing/2016/5/10/chartex" xmlns:cx5="http://schemas.microsoft.com/office/drawing/2016/5/11/chartex" xmlns:cx6="http://schemas.microsoft.com/office/drawing/2016/5/12/chartex" xmlns:cx7="http://schemas.microsoft.com/office/drawing/2016/5/13/chartex" xmlns:cx8="http://schemas.microsoft.com/office/drawing/2016/5/14/chartex" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:aink="http://schemas.microsoft.com/office/drawing/2016/ink" xmlns:am3d="http://schemas.microsoft.com/office/drawing/2017/model3d" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:oel="http://schemas.microsoft.com/office/2019/extlst" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:w16cex="http://schemas.microsoft.com/office/word/2018/wordml/cex" xmlns:w16cid="http://schemas.microsoft.com/office/word/2016/wordml/cid" xmlns:w16="http://schemas.microsoft.com/office/word/2018/wordml" xmlns:w16du="http://schemas.microsoft.com/office/word/2023/wordml/word16du" xmlns:w16sdtdh="http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash" xmlns:w16sdtfl="http://schemas.microsoft.com/office/word/2024/wordml/sdtformatlock" xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" mc:Ignorable="w14 w15 w16se w16cid w16 w16cex w16sdtdh w16sdtfl w16du wp14">
+  <w:body>
+    <w:p w14:paraId="1F4342AF" w14:textId="537A8B09" w:rsidR="003402BB" w:rsidRPr="00A504B4" w:rsidRDefault="00025BD6" w:rsidP="002C0C0C">
+      <w:pPr>
+        <w:pStyle w:val="Title"/>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+      </w:pPr>
+      <w:r w:rsidRPr="002C0C0C">
+        <w:t xml:space="preserve">Titre : Comprendre </w:t>
+      </w:r>
+      <w:r w:rsidR="002C0C0C" w:rsidRPr="002C0C0C">
+        <w:t xml:space="preserve">comment Word encode </w:t>
+      </w:r>
+      <w:r w:rsidR="002C0C0C" w:rsidRPr="00A504B4">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>le texte enrichi</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="4608D22B" w14:textId="1B5D80E0" w:rsidR="002C0C0C" w:rsidRPr="00A504B4" w:rsidRDefault="0042255E" w:rsidP="0042255E">
+      <w:pPr>
+        <w:pStyle w:val="Heading1"/>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+      </w:pPr>
+      <w:r w:rsidRPr="00A504B4">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t xml:space="preserve">À quoi </w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve">ressemble </w:t>
+      </w:r>
+      <w:r w:rsidR="002C0C0C">
+        <w:t xml:space="preserve">le titre 1 </w:t>
+      </w:r>
+      <w:r w:rsidRPr="00A504B4">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>?</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="75C6CB15" w14:textId="60D9BC16" w:rsidR="0042255E" w:rsidRPr="00A504B4" w:rsidRDefault="0042255E" w:rsidP="002C0C0C">
+      <w:pPr>
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+      </w:pPr>
+      <w:r w:rsidRPr="00A504B4">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>Et le texte</w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve"> normal </w:t>
+      </w:r>
+      <w:r w:rsidRPr="00A504B4">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>?</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="653FFEED" w14:textId="7BB530C4" w:rsidR="00B2382C" w:rsidRDefault="00B2382C" w:rsidP="002C0C0C">
+      <w:r w:rsidRPr="00A504B4">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t xml:space="preserve">Et </w:t>
+      </w:r>
+      <w:r>
+        <w:t>un saut de ligne.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="1CCC5BC1" w14:textId="005A526A" w:rsidR="000365F7" w:rsidRDefault="00B2382C" w:rsidP="000365F7">
+      <w:r>
+        <w:t xml:space="preserve">Et </w:t>
+      </w:r>
+      <w:r w:rsidRPr="000365F7">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t xml:space="preserve">le gras </w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve">par rapport à </w:t>
+      </w:r>
+      <w:r w:rsidRPr="000365F7">
+        <w:rPr>
+          <w:i/>
+          <w:iCs/>
+        </w:rPr>
+        <w:t xml:space="preserve">l'italique </w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve">par rapport </w:t>
+      </w:r>
+      <w:r w:rsidRPr="000365F7">
+        <w:rPr>
+          <w:u w:val="single"/>
+        </w:rPr>
+        <w:t xml:space="preserve">au soulignement </w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve">par rapport au </w:t>
+      </w:r>
+      <w:r w:rsidRPr="000365F7">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+          <w:i/>
+          <w:iCs/>
+        </w:rPr>
+        <w:t>gras-italique</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="580A027E" w14:textId="61F962F2" w:rsidR="000365F7" w:rsidRDefault="000365F7" w:rsidP="000365F7">
+      <w:r>
+        <w:t xml:space="preserve">Et </w:t>
+      </w:r>
+      <w:r w:rsidR="00EB0552" w:rsidRPr="00EB0552">
+        <w:rPr>
+          <w:sz w:val="28"/>
+          <w:szCs w:val="28"/>
+        </w:rPr>
+        <w:t>la police 14</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="7994136D" w14:textId="462E461D" w:rsidR="007E4F59" w:rsidRPr="007E4F59" w:rsidRDefault="00EB0552" w:rsidP="007E4F59">
+      <w:pPr>
+        <w:rPr>
+          <w:rFonts w:ascii="Courier New" w:hAnsi="Courier New" w:cs="Courier New"/>
+        </w:rPr>
+      </w:pPr>
+      <w:r>
+        <w:t xml:space="preserve">Et </w:t>
+      </w:r>
+      <w:r w:rsidR="007E4F59" w:rsidRPr="007E4F59">
+        <w:rPr>
+          <w:rFonts w:ascii="Courier New" w:hAnsi="Courier New" w:cs="Courier New"/>
+        </w:rPr>
+        <w:t>Courier New</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="6CB3B446" w14:textId="3C9EB761" w:rsidR="00DA6F5D" w:rsidRDefault="00DA6F5D" w:rsidP="007E4F59">
+      <w:r>
+        <w:t xml:space="preserve">Et </w:t>
+      </w:r>
+      <w:r w:rsidRPr="00DA6F5D">
+        <w:rPr>
+          <w:rStyle w:val="SubtleEmphasis"/>
+        </w:rPr>
+        <w:t>l'accentuation subtile</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="7FC0C8D8" w14:textId="2036ADBB" w:rsidR="007E4F59" w:rsidRDefault="007E4F59" w:rsidP="007E4F59">
+      <w:r>
+        <w:t>Et retour à la normale</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="76E997D2" w14:textId="56D58609" w:rsidR="00DA6F5D" w:rsidRDefault="00DA6F5D" w:rsidP="00DA6F5D">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Liste de paragraphes</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="342CAE41" w14:textId="6FD4F367" w:rsidR="00DA6F5D" w:rsidRDefault="00DA6F5D" w:rsidP="00DA6F5D">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+      </w:pPr>
+      <w:r>
+        <w:t>Liste à puces</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="7F7E6414" w14:textId="77DC1624" w:rsidR="00DA6F5D" w:rsidRDefault="00D34D11" w:rsidP="00DA6F5D">
+      <w:r>
+        <w:t>En rouge</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="775626E9" w14:textId="0BFEF8C2" w:rsidR="003B3AEE" w:rsidRDefault="003B3AEE" w:rsidP="003B3AEE">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+        <w:numPr>
+          <w:ilvl w:val="0"/>
+          <w:numId w:val="3"/>
+        </w:numPr>
+      </w:pPr>
+      <w:r>
+        <w:t>Liste à puces</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="5F1FF99B" w14:textId="790F08C8" w:rsidR="003B3AEE" w:rsidRDefault="003B3AEE" w:rsidP="003B3AEE">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+        <w:numPr>
+          <w:ilvl w:val="0"/>
+          <w:numId w:val="3"/>
+        </w:numPr>
+      </w:pPr>
+      <w:r>
+        <w:t>Liste à puces</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="76FBF8ED" w14:textId="5836A28F" w:rsidR="003B3AEE" w:rsidRDefault="003B3AEE" w:rsidP="003B3AEE">
+      <w:r>
+        <w:t>Ou</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="6282C15E" w14:textId="6CBD684F" w:rsidR="003B3AEE" w:rsidRDefault="00F037F9" w:rsidP="00F037F9">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+        <w:numPr>
+          <w:ilvl w:val="0"/>
+          <w:numId w:val="1"/>
+        </w:numPr>
+      </w:pPr>
+      <w:r>
+        <w:t>Liste numérotée</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="6E899757" w14:textId="2F5B08AA" w:rsidR="00F037F9" w:rsidRDefault="00F037F9" w:rsidP="00F037F9">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+        <w:numPr>
+          <w:ilvl w:val="0"/>
+          <w:numId w:val="1"/>
+        </w:numPr>
+      </w:pPr>
+      <w:r>
+        <w:t>Liste numérotée</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="033EF435" w14:textId="24459E9F" w:rsidR="00F037F9" w:rsidRDefault="00F037F9" w:rsidP="00F037F9">
+      <w:r>
+        <w:t>Ou</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="29E15EB9" w14:textId="573F243A" w:rsidR="00F037F9" w:rsidRDefault="00F037F9" w:rsidP="00F037F9">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+        <w:numPr>
+          <w:ilvl w:val="0"/>
+          <w:numId w:val="2"/>
+        </w:numPr>
+      </w:pPr>
+      <w:r>
+        <w:t>Liste numérotée</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="22E1D190" w14:textId="29064D12" w:rsidR="00F037F9" w:rsidRDefault="00F037F9" w:rsidP="00F037F9">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+        <w:numPr>
+          <w:ilvl w:val="1"/>
+          <w:numId w:val="2"/>
+        </w:numPr>
+      </w:pPr>
+      <w:r>
+        <w:t>Élément en retrait</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="0E630B44" w14:textId="522A8B18" w:rsidR="00F037F9" w:rsidRDefault="00F037F9" w:rsidP="00F037F9">
+      <w:pPr>
+        <w:pStyle w:val="ListParagraph"/>
+        <w:numPr>
+          <w:ilvl w:val="0"/>
+          <w:numId w:val="2"/>
+        </w:numPr>
+      </w:pPr>
+      <w:r>
+        <w:t>Liste numérotée</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="2EE66649" w14:textId="7B45E815" w:rsidR="00D34D11" w:rsidRDefault="00D34D11" w:rsidP="00DA6F5D">
+      <w:r>
+        <w:t>Surligné en jaune</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="410FCBBF" w14:textId="4CFDCECB" w:rsidR="005A399C" w:rsidRDefault="005A399C" w:rsidP="00DA6F5D">
+      <w:r>
+        <w:t xml:space="preserve">Ce texte est </w:t>
+      </w:r>
+      <w:r w:rsidRPr="004014A6">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t xml:space="preserve">important </w:t>
+      </w:r>
+      <w:r>
+        <w:t>!</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="50943A14" w14:textId="26B4C62A" w:rsidR="00D34D11" w:rsidRDefault="003B3AEE" w:rsidP="00061E13">
+      <w:pPr>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:t xml:space="preserve">Aligné à droite </w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="4372BCC4" w14:textId="041E80B3" w:rsidR="00061E13" w:rsidRDefault="00061E13" w:rsidP="00061E13">
+      <w:pPr>
+        <w:jc w:val="right"/>
+      </w:pPr>
+      <w:r>
+        <w:lastRenderedPageBreak/>
+        <w:t xml:space="preserve">Essayer des choses avec </w:t>
+      </w:r>
+      <w:r w:rsidR="00F74648">
+        <w:t xml:space="preserve">des deux-points </w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve">: </w:t>
+      </w:r>
+      <w:r w:rsidR="007F5741">
+        <w:t xml:space="preserve">voici ce qui se passe lorsqu'il y a un </w:t>
+      </w:r>
+      <w:r w:rsidR="00F74648">
+        <w:t>deux-points.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="69DC9D1F" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA">
+      <w:r>
+        <w:t>L'alarme sonna avant que le soleil ne soit complètement levé, et le garçon serra la couverture autour de ses épaules. L'école l'attendait derrière la porte de sa chambre : de longs couloirs, des crayons bien taillés, des questions auxquelles il ne savait jamais comment répondre. Cette pensée lui nouait l'estomac. S'il restait immobile, pensait-il, peut-être que la journée l'oublierait.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="4F849F7A" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA"/>
+    <w:p w14:paraId="2DE6F6C5" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA">
+      <w:r>
+        <w:t xml:space="preserve">Sa mère frappa doucement à la porte et l'appela par son nom. Il ne répondit pas. Il imagina l'horloge </w:t>
+      </w:r>
+      <w:r w:rsidRPr="000C6147">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t>ralentir</w:t>
+      </w:r>
+      <w:r>
+        <w:t>, imagina la cloche de l'école sonner sans lui. Dehors, un bus s'arrêta dans un sifflement, puis repartit dans un grondement. Il sourit un instant, triomphant, jusqu'à ce que le silence lui semble plus pesant que le bruit ne l'avait jamais été.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="1095A92E" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA"/>
+    <w:p w14:paraId="5887F35F" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA">
+      <w:r>
+        <w:t>Il s'assit et fixa le mur où était accrochée une affiche défraîchie, dont les coins étaient décollés. Hier, son professeur lui avait demandé de lire à haute voix. Sa voix avait tremblé et il avait senti tous les regards se tourner vers lui. Ce souvenir le brûlait. Pourquoi revenir là-dedans ?</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="72905D0C" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA"/>
+    <w:p w14:paraId="274E97E3" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA">
+      <w:r>
+        <w:t xml:space="preserve">Au petit-déjeuner, il remua ses </w:t>
+      </w:r>
+      <w:r w:rsidRPr="00EC3151">
+        <w:rPr>
+          <w:b/>
+          <w:bCs/>
+        </w:rPr>
+        <w:t xml:space="preserve">céréales </w:t>
+      </w:r>
+      <w:r>
+        <w:t>dans son bol. Sa mère ne le gronda pas et ne le pressa pas. Elle lui dit simplement, calmement, que certains jours étaient difficiles et que le fait d'avoir peur ne signifiait pas qu'il était faible. Elle lui rappela le projet scientifique qu'il avait presque terminé, l'ami qui l'attendait chaque matin à la porte.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="0D25A2FB" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA"/>
+    <w:p w14:paraId="77EA1D8B" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA">
+      <w:r>
+        <w:t xml:space="preserve">Le </w:t>
+      </w:r>
+      <w:r w:rsidRPr="00EC3151">
+        <w:rPr>
+          <w:color w:val="EE0000"/>
+        </w:rPr>
+        <w:t>garçon enfila son sac à dos</w:t>
+      </w:r>
+      <w:r>
+        <w:t xml:space="preserve">, surpris par sa légèreté. Le trajet jusqu'à l'arrêt de bus lui sembla plus court que d'habitude. Lorsque les portes du bus s'ouvrirent, il </w:t>
+      </w:r>
+      <w:r w:rsidRPr="00A136AE">
+        <w:rPr>
+          <w:sz w:val="36"/>
+          <w:szCs w:val="36"/>
+        </w:rPr>
+        <w:t>hésita</w:t>
+      </w:r>
+      <w:r>
+        <w:t>, puis monta à bord.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="6B7C5DB2" w14:textId="77777777" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA"/>
+    <w:p w14:paraId="7B4289F1" w14:textId="1D236DC7" w:rsidR="00BC26CA" w:rsidRDefault="00BC26CA" w:rsidP="00BC26CA">
+      <w:r>
+        <w:t>Alors que le bus démarrait, il regarda par la fenêtre. Il n'avait toujours pas envie d'y aller, pas vraiment, mais il y alla quand même. Et pour la première fois ce matin-là, il se sentit fier de lui.</w:t>
+      </w:r>
+    </w:p>
+    <w:p w14:paraId="5B27E8B2" w14:textId="77777777" w:rsidR="003B3AEE" w:rsidRPr="007E4F59" w:rsidRDefault="003B3AEE" w:rsidP="00DA6F5D"/>
+    <w:sectPr w:rsidR="003B3AEE" w:rsidRPr="007E4F59">
+      <w:pgSz w:w="12240" w:h="15840"/>
+      <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/>
+      <w:cols w:space="720"/>
+      <w:docGrid w:linePitch="360"/>
+    </w:sectPr>
+  </w:body>
+</w:document>`;
 
     // ==== 2) Parsing helpers ====
     const qn = (local) => `w:${local}`;
@@ -959,6 +1399,7 @@
     let PARSED, ALL_PARAS, FILTERED_PARAS, FILTERED_TREE;
     let selectedId = "p0";
     let openSet = new Set(["root", "body"]); // default expanded
+    let PARA_TRANSLATIONS = {};
 
     function kvRow(k, v) {
       const div = document.createElement("div");
@@ -1073,6 +1514,12 @@
         t.className = "txt";
         t.textContent = node.text.replace(/\s+/g, " ");
         meta.appendChild(t);
+        if (node.type === "w:p" && PARA_TRANSLATIONS[node.id]) {
+          const tt = document.createElement("div");
+          tt.className = "txt txt-trans";
+          tt.textContent = PARA_TRANSLATIONS[node.id].replace(/\s+/g, " ");
+          meta.appendChild(tt);
+        }
       }
 
       row.appendChild(tw);
@@ -1130,7 +1577,16 @@
 
     function renderPreview() {
       $preview.innerHTML = "";
-      FILTERED_PARAS.forEach(p => $preview.appendChild(paragraphEl(p)));
+      FILTERED_PARAS.forEach(p => {
+        const el = paragraphEl(p);
+        if (PARA_TRANSLATIONS[p.id]) {
+          const t = document.createElement("div");
+          t.className = "preview-trans";
+          t.textContent = PARA_TRANSLATIONS[p.id];
+          el.appendChild(t);
+        }
+        $preview.appendChild(el);
+      });
     }
 
     function renderJSON() {
@@ -1176,6 +1632,22 @@
       ALL_PARAS = PARSED.paragraphs;
       FILTERED_PARAS = ALL_PARAS.slice();
       FILTERED_TREE = PARSED.tree;
+
+      // Build per-paragraph translations from the embedded French XML
+      try {
+        const parsedFr = parseDocument(XML_SOURCE_FR);
+        const parasFr = parsedFr.paragraphs;
+        PARA_TRANSLATIONS = {};
+        ALL_PARAS.forEach((p, idx) => {
+          const fr = parasFr[idx];
+          if (fr && fr.text) {
+            PARA_TRANSLATIONS[p.id] = fr.text;
+          }
+        });
+      } catch (e2) {
+        console.warn("Failed to parse French XML or map translations:", e2);
+      }
+
       renderAll();
       $filter.addEventListener("input", applyFilter);
     } catch (e) {
