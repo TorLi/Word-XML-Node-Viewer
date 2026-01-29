@@ -1793,6 +1793,9 @@
     let STRINGS_TREE = null;
     let FILTERED_STRINGS_TREE = null;
     let selectedKeyId = null;
+    // Which panel the user last clicked in ('tree' | 'runsCompare' | 'preview' | null). Used to avoid
+    // centering the clicked element in that panel (so it doesn't jump); other panels still scroll to show it.
+    let lastSelectionSource = null;
 
     function kvRow(k, v) {
       const div = document.createElement("div");
@@ -1836,8 +1839,10 @@
     }
 
     // Centralised selection handler so we can manage auto-expansion/collapse
-    function handleNodeSelection(newNode) {
+    // source: 'tree' | 'runsCompare' | 'preview' – panel where the user clicked (we skip scroll there so it doesn't jump)
+    function handleNodeSelection(newNode, source) {
       if (!newNode || !newNode.id) return;
+      lastSelectionSource = source !== undefined ? source : null;
 
       if (currentMode === "document") {
         const prevNode = findNodeById(FILTERED_TREE, selectedId) || findNodeById(PARSED.tree, selectedId);
@@ -1870,7 +1875,7 @@
       wrap.className = "previewItem" + (isSelected ? " sel" : "");
       wrap.addEventListener("click", () => {
         // Treat paragraph selection from the preview like a tree selection
-        handleNodeSelection(para);
+        handleNodeSelection(para, "preview");
       });
 
       const p = document.createElement("div");
@@ -1995,7 +2000,7 @@
       row.appendChild(meta);
 
       row.addEventListener("click", () => {
-        handleNodeSelection(node);
+        handleNodeSelection(node, "tree");
       });
 
       return row;
@@ -2015,15 +2020,14 @@
       }
       walk(root, 0);
 
-      // Ensure selected node is visible inside the tree's own scroll area,
-      // without moving the whole page.
+      // In other panels, scroll to show the selected node; skip scroll in the panel where the user clicked.
       const selEl = $tree.querySelector(".node.sel");
-      if (selEl) {
+      if (selEl && lastSelectionSource !== "tree") {
         const treeRect = $tree.getBoundingClientRect();
         const elRect = selEl.getBoundingClientRect();
         const offset = elRect.top - treeRect.top;
         const targetScroll = $tree.scrollTop + offset - (treeRect.height / 2) + (elRect.height / 2);
-        $tree.scrollTop = Math.max(0, targetScroll);
+        $tree.scrollTo({ top: Math.max(0, targetScroll), behavior: "smooth" });
       }
     }
 
@@ -2136,7 +2140,7 @@
             tr.appendChild(td3);
 
             tr.addEventListener("click", () => {
-              handleNodeSelection(keyNode);
+              handleNodeSelection(keyNode, "runsCompare");
             });
 
             tbody.appendChild(tr);
@@ -2146,17 +2150,19 @@
         table.appendChild(tbody);
         container.appendChild(table);
 
-        // Scroll to current key
-        setTimeout(() => {
-          const currentRows = container.querySelectorAll('.current-para');
-          if (currentRows.length > 0) {
-            const firstCurrentRow = currentRows[0];
-            const containerRect = container.getBoundingClientRect();
-            const rowRect = firstCurrentRow.getBoundingClientRect();
-            const scrollTop = container.scrollTop + (rowRect.top - containerRect.top) - (containerRect.height / 2) + (rowRect.height / 2);
-            container.scrollTop = Math.max(0, scrollTop);
-          }
-        }, 0);
+        // Scroll to current key in other panels only; smooth scroll
+        if (lastSelectionSource !== "runsCompare") {
+          setTimeout(() => {
+            const currentRows = container.querySelectorAll('.current-para');
+            if (currentRows.length > 0) {
+              const firstCurrentRow = currentRows[0];
+              const containerRect = container.getBoundingClientRect();
+              const rowRect = firstCurrentRow.getBoundingClientRect();
+              const scrollTop = container.scrollTop + (rowRect.top - containerRect.top) - (containerRect.height / 2) + (rowRect.height / 2);
+              container.scrollTo({ top: Math.max(0, scrollTop), behavior: "smooth" });
+            }
+          }, 0);
+        }
 
         return;
       }
@@ -2395,7 +2401,7 @@
           // Clicking anywhere in the row selects the corresponding paragraph
           tr.addEventListener("click", () => {
             if (paraEn) {
-              handleNodeSelection(paraEn);
+              handleNodeSelection(paraEn, "runsCompare");
             }
           });
 
@@ -2413,17 +2419,19 @@
       table.appendChild(tbody);
       container.appendChild(table);
 
-      // Scroll to center the current paragraph rows inside the translation table
-      setTimeout(() => {
-        const currentRows = container.querySelectorAll('.current-para');
-        if (currentRows.length > 0) {
-          const firstCurrentRow = currentRows[0];
-          const containerRect = container.getBoundingClientRect();
-          const rowRect = firstCurrentRow.getBoundingClientRect();
-          const scrollTop = container.scrollTop + (rowRect.top - containerRect.top) - (containerRect.height / 2) + (rowRect.height / 2);
-          container.scrollTop = Math.max(0, scrollTop);
-        }
-      }, 0);
+      // Scroll to current paragraph in other panels only; smooth scroll
+      if (lastSelectionSource !== "runsCompare") {
+        setTimeout(() => {
+          const currentRows = container.querySelectorAll('.current-para');
+          if (currentRows.length > 0) {
+            const firstCurrentRow = currentRows[0];
+            const containerRect = container.getBoundingClientRect();
+            const rowRect = firstCurrentRow.getBoundingClientRect();
+            const scrollTop = container.scrollTop + (rowRect.top - containerRect.top) - (containerRect.height / 2) + (rowRect.height / 2);
+            container.scrollTo({ top: Math.max(0, scrollTop), behavior: "smooth" });
+          }
+        }, 0);
+      }
     }
 
     function renderPreview() {
@@ -2455,15 +2463,14 @@
         $preview.appendChild(el);
       });
 
-      // Ensure selected paragraph is visible in the preview list,
-      // without moving the whole page.
+      // In other panels, scroll to show the selected paragraph; skip in the panel where the user clicked.
       const selEl = $preview.querySelector(".previewItem.sel");
-      if (selEl) {
+      if (selEl && lastSelectionSource !== "preview") {
         const prevRect = $preview.getBoundingClientRect();
         const elRect = selEl.getBoundingClientRect();
         const offset = elRect.top - prevRect.top;
         const targetScroll = $preview.scrollTop + offset - (prevRect.height / 2) + (elRect.height / 2);
-        $preview.scrollTop = Math.max(0, targetScroll);
+        $preview.scrollTo({ top: Math.max(0, targetScroll), behavior: "smooth" });
       }
     }
 
@@ -2474,14 +2481,14 @@
       return (before.match(/\n/g) || []).length;
     }
 
-    // Scroll only the container to center the element (do not scroll the page)
-    function scrollContainerToCenter(container, element) {
+    // Scroll only the container to center the element (do not scroll the page). Uses smooth scroll for other panels.
+    function scrollContainerToCenter(container, element, smooth = true) {
       if (!container || !element) return;
       const containerRect = container.getBoundingClientRect();
       const elementRect = element.getBoundingClientRect();
       const elementTopInContent = elementRect.top - containerRect.top + container.scrollTop;
       const targetScroll = elementTopInContent - (container.clientHeight / 2) + (element.offsetHeight / 2);
-      container.scrollTop = Math.max(0, targetScroll);
+      container.scrollTo({ top: Math.max(0, targetScroll), behavior: smooth ? "smooth" : "auto" });
     }
 
     // Render JSON as line-by-line divs and scroll container to selected node (one-way sync, no page scroll)
@@ -2614,6 +2621,7 @@
           openSet.add("root"); openSet.add("body");
         }
         if (!findNodeById(FILTERED_TREE, selectedId)) selectedId = FILTERED_PARAS[0]?.id || "body";
+        lastSelectionSource = null;
       } else {
         // Strings mode
         if (!q) {
@@ -2632,13 +2640,15 @@
         if (!findNodeById(FILTERED_STRINGS_TREE, selectedKeyId)) {
           selectedKeyId = FILTERED_STRINGS_TREE.children[0]?.id || null;
         }
+        lastSelectionSource = null;
       }
       renderAll();
     }
 
     function switchMode(mode) {
       currentMode = mode;
-      
+      lastSelectionSource = null;
+
       // Update UI labels
       if (mode === "document") {
         $leftTitle.textContent = "Nodes";
