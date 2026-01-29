@@ -1536,24 +1536,36 @@
       return s;
     }
 
+    // Helper: get the paragraph id ("pX") associated with a node (paragraph or run)
+    function paragraphIdForNode(node) {
+      if (!node || !node.id) return null;
+      if (node.type === "w:p") return node.id;
+      if (node.type === "w:r") {
+        const m = node.id.match(/^p\d+/);
+        return m ? m[0] : null;
+      }
+      return null;
+    }
+
     // Centralised selection handler so we can manage auto-expansion/collapse
     function handleNodeSelection(newNode) {
       if (!newNode || !newNode.id) return;
 
-      // Collapse previously selected paragraph if:
-      // - selection moves to a different node
-      // - previous node was a paragraph
-      // - and it was NOT explicitly expanded by the user
       const prevNode = findNodeById(FILTERED_TREE, selectedId) || findNodeById(PARSED.tree, selectedId);
-      if (prevNode && prevNode.id !== newNode.id && prevNode.type === "w:p" && !userExpanded.has(prevNode.id)) {
-        openSet.delete(prevNode.id);
+      const prevParaId = paragraphIdForNode(prevNode);
+      const newParaId = paragraphIdForNode(newNode);
+
+      // If we are moving to a different paragraph, collapse the old one unless the
+      // user explicitly expanded it via the chevron.
+      if (prevParaId && prevParaId !== newParaId && !userExpanded.has(prevParaId)) {
+        openSet.delete(prevParaId);
       }
 
       selectedId = newNode.id;
 
-      // Always uncollapse the currently selected paragraph in the tree
-      if (newNode.type === "w:p") {
-        openSet.add(newNode.id);
+      // Always ensure the paragraph that owns the selection is expanded in the tree
+      if (newParaId) {
+        openSet.add(newParaId);
       }
 
       renderAll();
