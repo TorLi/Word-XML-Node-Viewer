@@ -76,12 +76,19 @@
 
     @media(min-width:1000px) {
       .grid {
-        grid-template-columns: 420px 1fr
+        grid-template-columns: 420px 1fr 350px
       }
     }
 
     .grid>* {
       min-width: 0;
+    }
+
+    /* Prevent the Selected node card from stretching to full column height */
+    .card-selected {
+      align-self: start;
+      max-height: 60vh;
+      overflow: auto;
     }
 
     .card {
@@ -221,13 +228,7 @@
     .two {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 12px
-    }
-
-    @media(min-width:850px) {
-      .two {
-        grid-template-columns: 1fr 1fr
-      }
+      gap: 12px;
     }
 
     .box {
@@ -439,6 +440,15 @@
       flex: 1 1 auto;
       max-height: none;
     }
+
+    /* Constrain vertical space so translation table and preview
+       fit alongside the export panels on typical screens */
+    #runsCompare,
+    #preview {
+      max-height: 40vh;
+      overflow: auto;
+      padding: 8px;
+    }
   </style>
 </head>
 
@@ -472,27 +482,8 @@
         <div class="scroll" id="tree"></div>
       </div>
 
-      <!-- RIGHT -->
+      <!-- MIDDLE -->
       <div class="stack">
-        <div class="card">
-          <div class="card-h">
-            <div class="title">Selected node</div>
-            <div class="hint" id="selHint">—</div>
-          </div>
-          <div class="card-b">
-            <div class="two">
-              <div class="box">
-                <div class="t">Metadata</div>
-                <div id="meta"></div>
-              </div>
-              <div class="box">
-                <div class="t">Properties</div>
-                <div id="props"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div class="card">
           <div class="card-h">
             <div class="title">Translation table</div>
@@ -536,6 +527,26 @@
         <div class="note">
           Notes: This viewer focuses on paragraph + run structure from your snippet. WordprocessingML has many more
           constructs (tables, drawings, numbering definitions, style inheritance, themes, etc.).
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="card card-selected">
+        <div class="card-h">
+          <div class="title">Selected node</div>
+          <div class="hint" id="selHint">—</div>
+        </div>
+        <div class="card-b">
+          <div class="two">
+            <div class="box">
+              <div class="t">Metadata</div>
+              <div id="meta"></div>
+            </div>
+            <div class="box">
+              <div class="t">Properties</div>
+              <div id="props"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
