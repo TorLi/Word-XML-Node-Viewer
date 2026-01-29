@@ -301,6 +301,14 @@
       word-break: break-all;
     }
 
+    .code-line {
+      display: block;
+      white-space: pre;
+      word-break: break-all;
+      font-family: inherit;
+      font-size: inherit;
+    }
+
     .stack {
       display: flex;
       flex-direction: column;
@@ -479,7 +487,8 @@
     }
 
     /* Single scrollbar: only .card-b scrolls; inner .code grows with content */
-    .stack > .card > .card-b .code {
+    .stack > .card > .card-b .code,
+    .stack > .card > .card-b .code-lines {
       max-height: none;
       height: auto;
       min-height: 100%;
@@ -549,7 +558,7 @@
             </div>
           </div>
           <div class="card-b">
-            <pre class="code" id="json"></pre>
+            <div class="code code-lines" id="json"></div>
           </div>
         </div>
 
@@ -561,7 +570,7 @@
             </div>
           </div>
           <div class="card-b">
-            <pre class="code" id="rawXml"></pre>
+            <div class="code code-lines" id="rawXml"></div>
           </div>
         </div>
 
@@ -2458,19 +2467,59 @@
       }
     }
 
+    // Get 0-based line index from character index in a string
+    function lineIndexFromCharIndex(str, charIndex) {
+      if (charIndex <= 0) return 0;
+      const before = str.slice(0, charIndex);
+      return (before.match(/\n/g) || []).length;
+    }
+
+    // Scroll only the container to center the element (do not scroll the page)
+    function scrollContainerToCenter(container, element) {
+      if (!container || !element) return;
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = element.getBoundingClientRect();
+      const elementTopInContent = elementRect.top - containerRect.top + container.scrollTop;
+      const targetScroll = elementTopInContent - (container.clientHeight / 2) + (element.offsetHeight / 2);
+      container.scrollTop = Math.max(0, targetScroll);
+    }
+
+    // Render JSON as line-by-line divs and scroll container to selected node (one-way sync, no page scroll)
     function renderJSON() {
-      if (currentMode === "document") {
-        $json.textContent = JSON.stringify(FILTERED_TREE, null, 2);
-      } else {
-        $json.textContent = JSON.stringify(FILTERED_STRINGS_TREE || STRINGS_TREE, null, 2);
+      const str = currentMode === "document"
+        ? JSON.stringify(FILTERED_TREE, null, 2)
+        : JSON.stringify(FILTERED_STRINGS_TREE || STRINGS_TREE, null, 2);
+      const lines = str.split("\n");
+      const selectedIdToUse = currentMode === "document" ? selectedId : selectedKeyId;
+      let targetLineIndex = -1;
+      if (selectedIdToUse) {
+        const search = `"id": "${selectedIdToUse}"`;
+        const idx = str.indexOf(search);
+        if (idx !== -1) targetLineIndex = lineIndexFromCharIndex(str, idx);
+      }
+      $json.innerHTML = "";
+      lines.forEach((line, i) => {
+        const div = document.createElement("div");
+        div.className = "code-line";
+        div.textContent = line;
+        if (i === targetLineIndex) div.id = "json-scroll-target";
+        $json.appendChild(div);
+      });
+      if (targetLineIndex >= 0) {
+        const container = $json.parentElement;
+        setTimeout(() => {
+          const el = document.getElementById("json-scroll-target");
+          if (el && container) scrollContainerToCenter(container, el);
+        }, 0);
       }
     }
 
+    // Render XML (or strings JSON) as line-by-line divs and scroll container to selected node (one-way sync, no page scroll)
     function renderRawXml() {
+      let str;
       if (currentMode === "document") {
-        $rawXml.textContent = XML_SOURCE;
+        str = XML_SOURCE;
       } else {
-        // For strings mode, show the strings data as JSON-like structure
         const stringsObj = {};
         const root = FILTERED_STRINGS_TREE || STRINGS_TREE;
         if (root && root.children) {
@@ -2483,7 +2532,56 @@
             }
           });
         }
-        $rawXml.textContent = JSON.stringify(stringsObj, null, 2);
+        str = JSON.stringify(stringsObj, null, 2);
+      }
+      // Normalize line endings so split and lineIndexFromCharIndex agree (fixes XML on some runtimes)
+      str = str.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+      const lines = str.split("\n");
+      let targetLineIndex = -1;
+      if (currentMode === "document") {
+        const node = findNodeById(FILTERED_TREE, selectedId) || findNodeById(PARSED.tree, selectedId);
+        if (node) {
+          let pIdx = null;
+          if (node.type === "w:p") pIdx = Number(node.id.replace(/^p/, ""));
+          else if (node.type === "w:r") {
+            const m = node.id.match(/^p(\d+)-r/);
+            if (m) pIdx = Number(m[1]);
+          }
+          if (pIdx != null && pIdx >= 0) {
+            let pos = 0;
+            for (let i = 0; i <= pIdx; i++) {
+              let next = str.indexOf("<w:p", pos);
+              while (next !== -1) {
+                const ch = str.charAt(next + 4);
+                if (ch === " " || ch === ">") break;
+                next = str.indexOf("<w:p", next + 1);
+              }
+              if (next === -1) break;
+              pos = next;
+              if (i < pIdx) pos += 1;
+            }
+            if (pos >= 0) targetLineIndex = lineIndexFromCharIndex(str, pos);
+          }
+        }
+      } else if (selectedKeyId) {
+        const keyName = selectedKeyId.replace(/^key-/, "");
+        const idx = str.indexOf(`"${keyName}":`);
+        if (idx !== -1) targetLineIndex = lineIndexFromCharIndex(str, idx);
+      }
+      $rawXml.innerHTML = "";
+      lines.forEach((line, i) => {
+        const div = document.createElement("div");
+        div.className = "code-line";
+        div.textContent = line;
+        if (i === targetLineIndex) div.id = "xml-scroll-target";
+        $rawXml.appendChild(div);
+      });
+      if (targetLineIndex >= 0) {
+        const container = $rawXml.parentElement;
+        setTimeout(() => {
+          const el = document.getElementById("xml-scroll-target");
+          if (el && container) scrollContainerToCenter(container, el);
+        }, 0);
       }
     }
 
