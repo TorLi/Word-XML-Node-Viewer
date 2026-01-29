@@ -1924,6 +1924,7 @@
         : (node.id === selectedKeyId);
       row.className = "node" + (isSelected ? " sel" : "");
       row.style.paddingLeft = (8 + depth * 14) + "px";
+      row.style.position = "relative"; // For absolute positioning of Plural badge
 
       const hasChildren = node.children && node.children.length;
       const isOpen = openSet.has(node.id);
@@ -1951,6 +1952,7 @@
       meta.className = "meta";
       const r1 = document.createElement("div");
       r1.className = "row";
+      
       const name = document.createElement("div");
       name.className = "name";
       name.textContent = node.name;
@@ -1998,6 +2000,21 @@
 
       row.appendChild(tw);
       row.appendChild(meta);
+
+      // Plural badge all the way to the right of the key box
+      if (currentMode === "strings" && node.pluralData) {
+        const pluralBadge = document.createElement("span");
+        pluralBadge.textContent = "Plural";
+        pluralBadge.style.position = "absolute";
+        pluralBadge.style.top = "0";
+        pluralBadge.style.right = "0";
+        pluralBadge.style.fontSize = "10px";
+        pluralBadge.style.color = "#16a34a"; // green
+        pluralBadge.style.fontWeight = "600";
+        pluralBadge.style.textTransform = "uppercase";
+        pluralBadge.style.letterSpacing = "0.5px";
+        row.appendChild(pluralBadge);
+      }
 
       row.addEventListener("click", () => {
         handleNodeSelection(node, "tree");
@@ -2113,10 +2130,26 @@
             td2.className = "run-text";
             
             if (keyNode.pluralData) {
-              // Show plural variants
+              // Show plural variants with green labels
               const pluralDiv = document.createElement("div");
               pluralDiv.style.whiteSpace = "pre-wrap";
-              pluralDiv.textContent = `one: ${keyNode.pluralData.one.en}\nmany: ${keyNode.pluralData.many.en}`;
+              
+              const oneLabel = document.createElement("span");
+              oneLabel.textContent = "one: ";
+              oneLabel.style.color = "#16a34a"; // green
+              oneLabel.style.fontWeight = "600";
+              
+              const manyLabel = document.createElement("span");
+              manyLabel.textContent = "many: ";
+              manyLabel.style.color = "#16a34a"; // green
+              manyLabel.style.fontWeight = "600";
+              
+              pluralDiv.appendChild(oneLabel);
+              pluralDiv.appendChild(document.createTextNode(keyNode.pluralData.one.en));
+              pluralDiv.appendChild(document.createTextNode("\n"));
+              pluralDiv.appendChild(manyLabel);
+              pluralDiv.appendChild(document.createTextNode(keyNode.pluralData.many.en));
+              
               td2.appendChild(pluralDiv);
             } else {
               td2.textContent = keyNode.text || "";
@@ -2126,10 +2159,26 @@
             td3.className = "run-text";
             
             if (keyNode.pluralData) {
-              // Show plural variants
+              // Show plural variants with green labels
               const pluralDiv = document.createElement("div");
               pluralDiv.style.whiteSpace = "pre-wrap";
-              pluralDiv.textContent = `one: ${keyNode.pluralData.one.fr}\nmany: ${keyNode.pluralData.many.fr}`;
+              
+              const oneLabel = document.createElement("span");
+              oneLabel.textContent = "one: ";
+              oneLabel.style.color = "#16a34a"; // green
+              oneLabel.style.fontWeight = "600";
+              
+              const manyLabel = document.createElement("span");
+              manyLabel.textContent = "many: ";
+              manyLabel.style.color = "#16a34a"; // green
+              manyLabel.style.fontWeight = "600";
+              
+              pluralDiv.appendChild(oneLabel);
+              pluralDiv.appendChild(document.createTextNode(keyNode.pluralData.one.fr));
+              pluralDiv.appendChild(document.createTextNode("\n"));
+              pluralDiv.appendChild(manyLabel);
+              pluralDiv.appendChild(document.createTextNode(keyNode.pluralData.many.fr));
+              
               td3.appendChild(pluralDiv);
             } else {
               td3.textContent = keyNode.translation || "";
