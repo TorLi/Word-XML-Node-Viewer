@@ -421,6 +421,24 @@
     .runs-table tr.current-para:hover {
       background: #e2e8f0;
     }
+    /* Dedicated layout for the left "Nodes" card so it fits the viewport */
+    .card-nodes {
+      display: flex;
+      flex-direction: column;
+      /* keep the whole card roughly within the visible area */
+      max-height: calc(100vh - 140px);
+    }
+
+    .card-nodes .card-b {
+      /* keep padding but don't let it grow */
+      flex: 0 0 auto;
+    }
+
+    .card-nodes .scroll {
+      /* let the nodes list take remaining space and scroll inside the card */
+      flex: 1 1 auto;
+      max-height: none;
+    }
   </style>
 </head>
 
@@ -441,7 +459,7 @@
 
     <div class="grid">
       <!-- LEFT -->
-      <div class="card">
+      <div class="card card-nodes">
         <div class="card-h">
           <div>
             <div class="title">Nodes</div>
