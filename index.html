@@ -1501,6 +1501,9 @@
     let PARSED, ALL_PARAS, ALL_PARAS_FR, FILTERED_PARAS, FILTERED_TREE;
     let selectedId = "p0";
     let openSet = new Set(["root", "body"]); // default expanded
+    // Nodes explicitly expanded by the user (via the chevron).
+    // These should remain open even when they are no longer selected.
+    let userExpanded = new Set(["root", "body"]);
     let PARA_TRANSLATIONS = {};
 
     function kvRow(k, v) {
@@ -1533,10 +1536,36 @@
       return s;
     }
 
+    // Centralised selection handler so we can manage auto-expansion/collapse
+    function handleNodeSelection(newNode) {
+      if (!newNode || !newNode.id) return;
+
+      // Collapse previously selected paragraph if:
+      // - selection moves to a different node
+      // - previous node was a paragraph
+      // - and it was NOT explicitly expanded by the user
+      const prevNode = findNodeById(FILTERED_TREE, selectedId) || findNodeById(PARSED.tree, selectedId);
+      if (prevNode && prevNode.id !== newNode.id && prevNode.type === "w:p" && !userExpanded.has(prevNode.id)) {
+        openSet.delete(prevNode.id);
+      }
+
+      selectedId = newNode.id;
+
+      // Always uncollapse the currently selected paragraph in the tree
+      if (newNode.type === "w:p") {
+        openSet.add(newNode.id);
+      }
+
+      renderAll();
+    }
+
     function paragraphEl(para) {
       const wrap = document.createElement("div");
       wrap.className = "previewItem" + (para.id === selectedId ? " sel" : "");
-      wrap.addEventListener("click", () => { selectedId = para.id; renderAll(); });
+      wrap.addEventListener("click", () => {
+        // Treat paragraph selection from the preview like a tree selection
+        handleNodeSelection(para);
+      });
 
       const p = document.createElement("div");
       p.className = "p";
@@ -1592,8 +1621,15 @@
       tw.addEventListener("click", (e) => {
         e.stopPropagation();
         if (!hasChildren) return;
-        if (isOpen) openSet.delete(node.id);
-        else openSet.add(node.id);
+        if (isOpen) {
+          // User explicitly collapsed this node
+          openSet.delete(node.id);
+          userExpanded.delete(node.id);
+        } else {
+          // User explicitly expanded this node
+          openSet.add(node.id);
+          userExpanded.add(node.id);
+        }
         renderTree();
       });
 
@@ -1638,8 +1674,7 @@
       row.appendChild(meta);
 
       row.addEventListener("click", () => {
-        selectedId = node.id;
-        renderAll();
+        handleNodeSelection(node);
       });
 
       return row;
@@ -1809,7 +1844,8 @@
 
           const td1 = document.createElement("td");
           td1.className = "para-id";
-          td1.textContent = `p${paraIdx}`;
+          const paraId = (paraEn && paraEn.props && paraEn.props.paraId) ? paraEn.props.paraId : null;
+          td1.textContent = paraId || `p${paraIdx}`;
 
           const td2 = document.createElement("td");
           td2.className = "run-num";
