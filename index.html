@@ -480,7 +480,7 @@
             <div class="title">Translation table</div>
             <div class="hint">Side-by-side runs for current paragraph</div>
           </div>
-          <div class="card-b" id="runsCompare" style="max-height:44vh; overflow:auto"></div>
+          <div class="card-b scroll" id="runsCompare"></div>
         </div>
 
         <div class="card">
@@ -488,7 +488,7 @@
             <div class="title">Rendered preview</div>
             <div class="hint">(basic: b/i/u/color/font/size, alignment, simple lists)</div>
           </div>
-          <div class="card-b" id="preview" style="max-height:44vh; overflow:auto"></div>
+          <div class="card-b scroll" id="preview"></div>
         </div>
 
         <div class="card">
@@ -1571,9 +1571,10 @@
       renderAll();
     }
 
-    function paragraphEl(para) {
+    function paragraphEl(para, selectedParaId) {
       const wrap = document.createElement("div");
-      wrap.className = "previewItem" + (para.id === selectedId ? " sel" : "");
+      const isSelected = para.id === selectedParaId;
+      wrap.className = "previewItem" + (isSelected ? " sel" : "");
       wrap.addEventListener("click", () => {
         // Treat paragraph selection from the preview like a tree selection
         handleNodeSelection(para);
@@ -1703,6 +1704,17 @@
         }
       }
       walk(root, 0);
+
+      // Ensure selected node is visible inside the tree's own scroll area,
+      // without moving the whole page.
+      const selEl = $tree.querySelector(".node.sel");
+      if (selEl) {
+        const treeRect = $tree.getBoundingClientRect();
+        const elRect = selEl.getBoundingClientRect();
+        const offset = elRect.top - treeRect.top;
+        const targetScroll = $tree.scrollTop + offset - (treeRect.height / 2) + (elRect.height / 2);
+        $tree.scrollTop = Math.max(0, targetScroll);
+      }
     }
 
     function renderInspector() {
@@ -1758,10 +1770,6 @@
         container.appendChild(info);
         return;
       }
-
-      // Get previous, current, and next paragraphs
-      const prevIdx = pIdx > 0 ? pIdx - 1 : null;
-      const nextIdx = pIdx < ALL_PARAS.length - 1 ? pIdx + 1 : null;
 
       // Helper: split a paragraph into "sentences" based on simple punctuation / line breaks.
       // Returns { sentences: [{ segments: [{ run, start, end }] }], runFirstSentenceIdx, runLastSentenceIdx }
@@ -1971,27 +1979,29 @@
           tr.appendChild(td1);
           tr.appendChild(td3);
           tr.appendChild(td4);
+
+          // Clicking anywhere in the row selects the corresponding paragraph
+          tr.addEventListener("click", () => {
+            if (paraEn) {
+              handleNodeSelection(paraEn);
+            }
+          });
+
           tbody.appendChild(tr);
         }
       }
 
-      // Add rows for previous paragraph if it exists
-      if (prevIdx !== null && ALL_PARAS[prevIdx] && ALL_PARAS_FR[prevIdx]) {
-        addParagraphRows(ALL_PARAS[prevIdx], ALL_PARAS_FR[prevIdx], prevIdx, false);
-      }
-
-      // Add rows for current paragraph
-      addParagraphRows(ALL_PARAS[pIdx], ALL_PARAS_FR[pIdx], pIdx, true);
-
-      // Add rows for next paragraph if it exists
-      if (nextIdx !== null && ALL_PARAS[nextIdx] && ALL_PARAS_FR[nextIdx]) {
-        addParagraphRows(ALL_PARAS[nextIdx], ALL_PARAS_FR[nextIdx], nextIdx, false);
+      // Add rows for all paragraphs so the table is scrollable from beginning to end
+      for (let idx = 0; idx < ALL_PARAS.length; idx++) {
+        if (ALL_PARAS[idx] && ALL_PARAS_FR[idx]) {
+          addParagraphRows(ALL_PARAS[idx], ALL_PARAS_FR[idx], idx, idx === pIdx);
+        }
       }
 
       table.appendChild(tbody);
       container.appendChild(table);
 
-      // Scroll to center the current paragraph rows
+      // Scroll to center the current paragraph rows inside the translation table
       setTimeout(() => {
         const currentRows = container.querySelectorAll('.current-para');
         if (currentRows.length > 0) {
@@ -2006,8 +2016,11 @@
 
     function renderPreview() {
       $preview.innerHTML = "";
+      const selectedNode = findNodeById(FILTERED_TREE, selectedId) || findNodeById(PARSED.tree, selectedId);
+      const selectedParaId = paragraphIdForNode(selectedNode);
+
       FILTERED_PARAS.forEach(p => {
-        const el = paragraphEl(p);
+        const el = paragraphEl(p, selectedParaId);
         if (PARA_TRANSLATIONS[p.id]) {
           const t = document.createElement("div");
           t.className = "preview-trans";
@@ -2016,6 +2029,17 @@
         }
         $preview.appendChild(el);
       });
+
+      // Ensure selected paragraph is visible in the preview list,
+      // without moving the whole page.
+      const selEl = $preview.querySelector(".previewItem.sel");
+      if (selEl) {
+        const prevRect = $preview.getBoundingClientRect();
+        const elRect = selEl.getBoundingClientRect();
+        const offset = elRect.top - prevRect.top;
+        const targetScroll = $preview.scrollTop + offset - (prevRect.height / 2) + (elRect.height / 2);
+        $preview.scrollTop = Math.max(0, targetScroll);
+      }
     }
 
     function renderJSON() {
