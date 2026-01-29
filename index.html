@@ -536,14 +536,14 @@
   <div class="wrap">
     <div class="top">
       <div>
-        <h1>WordprocessingML → Node Representation</h1>
-        <div class="sub">document → body → paragraphs → runs (with a basic rich-text preview)</div>
+        <h1 id="modeTitle">.docx Document → Node Representation</h1>
+        <div class="sub" id="modeSubtitle">document → body → paragraphs → runs (with a basic rich-text preview)</div>
         <div class="mode-toggle">
           <button id="modeDocument" class="active">Document Translation</button>
           <button id="modeStrings">Strings Translation</button>
         </div>
       </div>
-      <div class="tags">
+      <div class="tags" id="modeTags">
         <span class="tag">DOMParser</span>
         <span class="tag">Node Tree</span>
         <span class="tag">Rich Preview</span>
@@ -1814,6 +1814,9 @@
     const $leftTitle = document.getElementById("leftTitle");
     const $tableHint = document.getElementById("tableHint");
     const $previewCard = document.getElementById("previewCard");
+    const $modeSubtitle = document.getElementById("modeSubtitle");
+    const $modeTags = document.getElementById("modeTags");
+    const $modeTitle = document.getElementById("modeTitle");
 
     let PARSED, ALL_PARAS, ALL_PARAS_FR, FILTERED_PARAS, FILTERED_TREE;
     let selectedId = "p0";
@@ -2736,11 +2739,40 @@
       currentMode = mode;
       lastSelectionSource = null;
 
+      // Helper to set the main title
+      function setTitle(text) {
+        if ($modeTitle) {
+          $modeTitle.textContent = text;
+        }
+      }
+
+      // Helper to set the subtitle text under the main title
+      function setSubtitle(text) {
+        if ($modeSubtitle) {
+          $modeSubtitle.textContent = text;
+        }
+      }
+
+      // Helper to set the small badges on the right
+      function setTags(labels) {
+        if (!$modeTags) return;
+        $modeTags.innerHTML = "";
+        labels.forEach(label => {
+          const span = document.createElement("span");
+          span.className = "tag";
+          span.textContent = label;
+          $modeTags.appendChild(span);
+        });
+      }
+
       // Update UI labels
       if (mode === "document") {
+        setTitle(".docx Document → Node Representation");
         $leftTitle.textContent = "Nodes";
         $filter.placeholder = "Filter paragraphs by text…";
         $tableHint.textContent = "Side-by-side runs for current paragraph";
+        setSubtitle("document → body → paragraphs → runs (with a basic rich-text preview)");
+        setTags(["DOMParser", "Node Tree", "Rich Preview", "Translation (FR)"]);
         $modeDocument.classList.add("active");
         $modeStrings.classList.remove("active");
         selectedId = FILTERED_PARAS[0]?.id || "body";
@@ -2750,9 +2782,12 @@
           $previewCard.style.display = "";
         }
       } else {
+        setTitle("Strings → Translation Table");
         $leftTitle.textContent = "Keys";
         $filter.placeholder = "Filter keys by name or value…";
         $tableHint.textContent = "Side-by-side key-value translations";
+        setSubtitle("keys → values → plural forms (side-by-side EN/FR)");
+        setTags(["JSON", "Key Tree", "Plural Forms", "Translation (FR)"]);
         $modeDocument.classList.remove("active");
         $modeStrings.classList.add("active");
         selectedKeyId = FILTERED_STRINGS_TREE?.children[0]?.id || STRINGS_TREE?.children[0]?.id || null;
