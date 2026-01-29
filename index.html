@@ -422,6 +422,35 @@
     .runs-table tr.current-para:hover {
       background: #e2e8f0;
     }
+
+    .mode-toggle {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 12px;
+    }
+
+    .mode-toggle button {
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-toggle button:hover {
+      background: #f1f5f9;
+    }
+
+    .mode-toggle button.active {
+      background: #0f172a;
+      color: #fff;
+      border-color: #0f172a;
+    }
+
     /* Dedicated layout for the left "Nodes" card so it fits the viewport */
     .card-nodes {
       display: flex;
@@ -441,13 +470,18 @@
       max-height: none;
     }
 
-    /* Constrain vertical space so translation table and preview
-       fit alongside the export panels on typical screens */
-    #runsCompare,
-    #preview {
-      max-height: 40vh;
+    /* Middle column: all four boxes use the same height as the JSON box */
+    .stack > .card > .card-b {
+      height: 30vh;
+      min-height: 30vh;
       overflow: auto;
-      padding: 8px;
+      box-sizing: border-box;
+    }
+
+    .stack > .card > .card-b .code {
+      max-height: none;
+      height: 100%;
+      box-sizing: border-box;
     }
   </style>
 </head>
@@ -458,6 +492,10 @@
       <div>
         <h1>WordprocessingML → Node Representation</h1>
         <div class="sub">document → body → paragraphs → runs (with a basic rich-text preview)</div>
+        <div class="mode-toggle">
+          <button id="modeDocument" class="active">Document Translation</button>
+          <button id="modeStrings">Strings Translation</button>
+        </div>
       </div>
       <div class="tags">
         <span class="tag">DOMParser</span>
@@ -472,7 +510,7 @@
       <div class="card card-nodes">
         <div class="card-h">
           <div>
-            <div class="title">Nodes</div>
+            <div class="title" id="leftTitle">Nodes</div>
             <div class="hint">Click to inspect</div>
           </div>
         </div>
@@ -487,12 +525,12 @@
         <div class="card">
           <div class="card-h">
             <div class="title">Translation table</div>
-            <div class="hint">Side-by-side runs for current paragraph</div>
+            <div class="hint" id="tableHint">Side-by-side runs for current paragraph</div>
           </div>
           <div class="card-b scroll" id="runsCompare"></div>
         </div>
 
-        <div class="card">
+        <div class="card" id="previewCard">
           <div class="card-h">
             <div class="title">Rendered preview</div>
             <div class="hint">(basic: b/i/u/color/font/size, alignment, simple lists)</div>
@@ -503,8 +541,8 @@
         <div class="card">
           <div class="card-h">
             <div>
-              <div class="title">Export: node JSON</div>
-              <div class="hint">Structured node representation</div>
+              <div class="title">JSON</div>
+              <div class="hint">Structured representation</div>
             </div>
           </div>
           <div class="card-b">
@@ -515,8 +553,8 @@
         <div class="card">
           <div class="card-h">
             <div>
-              <div class="title">Raw document.xml</div>
-              <div class="hint">Full WordprocessingML source</div>
+              <div class="title">XML</div>
+              <div class="hint">Full source</div>
             </div>
           </div>
           <div class="card-b">
@@ -553,7 +591,124 @@
   </div>
 
   <script>
-    // ==== 1) Your XML (embedded) ====
+    // ==== 1) Sample Strings Data ====
+    const STRINGS_DATA = {
+      "app.title": "Welcome to MyApp",
+      "app.subtitle": "Your productivity companion",
+      "app.button.save": "Save",
+      "app.button.cancel": "Cancel",
+      "app.button.delete": "Delete",
+      "app.button.submit": "Submit",
+      "app.button.close": "Close",
+      "app.button.back": "Back",
+      "app.button.next": "Next",
+      "app.button.previous": "Previous",
+      "app.menu.file": "File",
+      "app.menu.edit": "Edit",
+      "app.menu.view": "View",
+      "app.menu.help": "Help",
+      "app.message.success": "Operation completed successfully",
+      "app.message.error": "An error occurred",
+      "app.message.warning": "Please review your input",
+      "app.message.info": "Information",
+      "app.label.username": "Username",
+      "app.label.password": "Password",
+      "app.label.email": "Email address",
+      "app.label.name": "Full name",
+      "app.label.phone": "Phone number",
+      "app.label.address": "Address",
+      "app.label.city": "City",
+      "app.label.country": "Country",
+      "app.label.date": "Date",
+      "app.label.time": "Time",
+      "app.label.status": "Status",
+      "app.label.description": "Description",
+      "app.placeholder.search": "Search...",
+      "app.placeholder.enterText": "Enter text here",
+      "app.placeholder.selectOption": "Select an option",
+      "app.tooltip.save": "Save your changes",
+      "app.tooltip.delete": "Delete this item",
+      "app.tooltip.refresh": "Refresh the page",
+      "app.tooltip.settings": "Open settings",
+      "app.status.loading": "Loading...",
+      "app.status.saving": "Saving...",
+      "app.status.processing": "Processing...",
+      "app.status.complete": "Complete",
+      "app.status.pending": "Pending",
+      "app.status.failed": "Failed",
+      "app.error.network": "Network connection error",
+      "app.error.notFound": "Resource not found",
+      "app.error.unauthorized": "Unauthorized access",
+      "app.error.validation": "Validation failed",
+      "app.confirm.delete": "Are you sure you want to delete this item?",
+      "app.confirm.leave": "You have unsaved changes. Are you sure you want to leave?",
+      "app.items.count.one": "1 item",
+      "app.items.count.many": "{count} items",
+      "app.users.count.one": "1 user",
+      "app.users.count.many": "{count} users",
+      "app.files.count.one": "1 file",
+      "app.files.count.many": "{count} files"
+    };
+
+    const STRINGS_DATA_FR = {
+      "app.title": "Bienvenue dans MyApp",
+      "app.subtitle": "Votre compagnon de productivité",
+      "app.button.save": "Enregistrer",
+      "app.button.cancel": "Annuler",
+      "app.button.delete": "Supprimer",
+      "app.button.submit": "Soumettre",
+      "app.button.close": "Fermer",
+      "app.button.back": "Retour",
+      "app.button.next": "Suivant",
+      "app.button.previous": "Précédent",
+      "app.menu.file": "Fichier",
+      "app.menu.edit": "Éditer",
+      "app.menu.view": "Voir",
+      "app.menu.help": "Aide",
+      "app.message.success": "Opération terminée avec succès",
+      "app.message.error": "Une erreur s'est produite",
+      "app.message.warning": "Veuillez vérifier votre saisie",
+      "app.message.info": "Information",
+      "app.label.username": "Nom d'utilisateur",
+      "app.label.password": "Mot de passe",
+      "app.label.email": "Adresse e-mail",
+      "app.label.name": "Nom complet",
+      "app.label.phone": "Numéro de téléphone",
+      "app.label.address": "Adresse",
+      "app.label.city": "Ville",
+      "app.label.country": "Pays",
+      "app.label.date": "Date",
+      "app.label.time": "Heure",
+      "app.label.status": "Statut",
+      "app.label.description": "Description",
+      "app.placeholder.search": "Rechercher...",
+      "app.placeholder.enterText": "Saisissez du texte ici",
+      "app.placeholder.selectOption": "Sélectionnez une option",
+      "app.tooltip.save": "Enregistrer vos modifications",
+      "app.tooltip.delete": "Supprimer cet élément",
+      "app.tooltip.refresh": "Actualiser la page",
+      "app.tooltip.settings": "Ouvrir les paramètres",
+      "app.status.loading": "Chargement...",
+      "app.status.saving": "Enregistrement...",
+      "app.status.processing": "Traitement...",
+      "app.status.complete": "Terminé",
+      "app.status.pending": "En attente",
+      "app.status.failed": "Échec",
+      "app.error.network": "Erreur de connexion réseau",
+      "app.error.notFound": "Ressource introuvable",
+      "app.error.unauthorized": "Accès non autorisé",
+      "app.error.validation": "Échec de la validation",
+      "app.confirm.delete": "Êtes-vous sûr de vouloir supprimer cet élément ?",
+      "app.confirm.leave": "Vous avez des modifications non enregistrées. Êtes-vous sûr de vouloir quitter ?",
+      "app.items.count.one": "1 élément",
+      "app.items.count.many": "{count} éléments",
+      "app.users.count.one": "1 utilisateur",
+      "app.users.count.many": "{count} utilisateurs",
+      "app.files.count.one": "1 fichier",
+      "app.files.count.many": "{count} fichiers"
+    };
+
+    // ==== 2) Your XML (embedded) ====
     const XML_SOURCE = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex" xmlns:cx1="http://schemas.microsoft.com/office/drawing/2015/9/8/chartex" xmlns:cx2="http://schemas.microsoft.com/office/drawing/2015/10/21/chartex" xmlns:cx3="http://schemas.microsoft.com/office/drawing/2016/5/9/chartex" xmlns:cx4="http://schemas.microsoft.com/office/drawing/2016/5/10/21/chartex" xmlns:cx5="http://schemas.microsoft.com/office/drawing/2016/5/11/chartex" xmlns:cx6="http://schemas.microsoft.com/office/drawing/2016/5/12/chartex" xmlns:cx7="http://schemas.microsoft.com/office/drawing/2016/5/13/chartex" xmlns:cx8="http://schemas.microsoft.com/office/drawing/2016/5/14/chartex" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:aink="http://schemas.microsoft.com/office/drawing/2016/ink" xmlns:am3d="http://schemas.microsoft.com/office/drawing/2017/model3d" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:oel="http://schemas.microsoft.com/office/2019/extlst" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:w16cex="http://schemas.microsoft.com/office/word/2018/wordml/cex" xmlns:w16cid="http://schemas.microsoft.com/office/word/2016/wordml/cid" xmlns:w16="http://schemas.microsoft.com/office/word/2018/wordml" xmlns:w16du="http://schemas.microsoft.com/office/word/2023/wordml/word16du" xmlns:w16sdtdh="http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash" xmlns:w16sdtfl="http://schemas.microsoft.com/office/word/2024/wordml/sdtformatlock" xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" mc:Ignorable="w14 w15 w16se w16cid w16 w16cex w16sdtdh w16sdtfl w16du wp14">
     <w:body>
@@ -1420,7 +1575,10 @@
   </w:body>
 </w:document>`;
 
-    // ==== 2) Parsing helpers ====
+    // ==== 3) Mode Management ====
+    let currentMode = "document"; // "document" or "strings"
+
+    // ==== 4) Parsing helpers ====
     const qn = (local) => `w:${local}`;
     const firstChild = (el, tag) => el ? (Array.from(el.getElementsByTagName(tag))[0] ?? null) : null;
     const directChildren = (el, tag) => el ? Array.from(el.childNodes).filter(n => n.nodeType === 1 && n.tagName === tag) : [];
@@ -1517,6 +1675,85 @@
       return null;
     }
 
+    // Build strings tree structure
+    function buildStringsTree() {
+      const keys = Object.keys(STRINGS_DATA).sort();
+      const processedKeys = new Set();
+      const children = [];
+      
+      keys.forEach(key => {
+        // Skip if already processed as part of a plural group
+        if (processedKeys.has(key)) return;
+        
+        // Check if this key has plural variants (.one or .many)
+        const pluralMatch = key.match(/^(.+)\.(one|many)$/);
+        
+        if (pluralMatch) {
+          // This is a plural key - find its pair
+          const baseKey = pluralMatch[1];
+          const variant = pluralMatch[2];
+          const otherVariant = variant === "one" ? "many" : "one";
+          const oneKey = baseKey + ".one";
+          const manyKey = baseKey + ".many";
+          
+          if (STRINGS_DATA[oneKey] && STRINGS_DATA[manyKey]) {
+            // Both variants exist - create a single node with plural data
+            processedKeys.add(oneKey);
+            processedKeys.add(manyKey);
+            
+            children.push({
+              id: `key-${baseKey}`,
+              type: "string",
+              name: baseKey,
+              props: { key: baseKey },
+              text: STRINGS_DATA[oneKey], // Use one as primary text
+              translation: STRINGS_DATA_FR[oneKey] || "",
+              pluralData: {
+                one: { en: STRINGS_DATA[oneKey], fr: STRINGS_DATA_FR[oneKey] || "" },
+                many: { en: STRINGS_DATA[manyKey], fr: STRINGS_DATA_FR[manyKey] || "" }
+              },
+              children: []
+            });
+          } else {
+            // Only one variant exists - treat as regular key
+            processedKeys.add(key);
+            children.push({
+              id: `key-${key}`,
+              type: "string",
+              name: key,
+              props: { key },
+              text: STRINGS_DATA[key],
+              translation: STRINGS_DATA_FR[key] || "",
+              pluralData: null,
+              children: []
+            });
+          }
+        } else {
+          // Regular key (not a plural variant)
+          processedKeys.add(key);
+          children.push({
+            id: `key-${key}`,
+            type: "string",
+            name: key,
+            props: { key },
+            text: STRINGS_DATA[key],
+            translation: STRINGS_DATA_FR[key] || "",
+            pluralData: null,
+            children: []
+          });
+        }
+      });
+      
+      return {
+        id: "root",
+        type: "strings",
+        name: "strings",
+        props: {},
+        text: "",
+        children: children
+      };
+    }
+
     // ==== 3) Rendering ====
     const $tree = document.getElementById("tree");
     const $filter = document.getElementById("filter");
@@ -1526,6 +1763,11 @@
     const $json = document.getElementById("json");
     const $selHint = document.getElementById("selHint");
     const $rawXml = document.getElementById("rawXml");
+    const $modeDocument = document.getElementById("modeDocument");
+    const $modeStrings = document.getElementById("modeStrings");
+    const $leftTitle = document.getElementById("leftTitle");
+    const $tableHint = document.getElementById("tableHint");
+    const $previewCard = document.getElementById("previewCard");
 
     let PARSED, ALL_PARAS, ALL_PARAS_FR, FILTERED_PARAS, FILTERED_TREE;
     let selectedId = "p0";
@@ -1534,6 +1776,11 @@
     // These should remain open even when they are no longer selected.
     let userExpanded = new Set(["root", "body"]);
     let PARA_TRANSLATIONS = {};
+    
+    // Strings mode data
+    let STRINGS_TREE = null;
+    let FILTERED_STRINGS_TREE = null;
+    let selectedKeyId = null;
 
     function kvRow(k, v) {
       const div = document.createElement("div");
@@ -1580,21 +1827,26 @@
     function handleNodeSelection(newNode) {
       if (!newNode || !newNode.id) return;
 
-      const prevNode = findNodeById(FILTERED_TREE, selectedId) || findNodeById(PARSED.tree, selectedId);
-      const prevParaId = paragraphIdForNode(prevNode);
-      const newParaId = paragraphIdForNode(newNode);
+      if (currentMode === "document") {
+        const prevNode = findNodeById(FILTERED_TREE, selectedId) || findNodeById(PARSED.tree, selectedId);
+        const prevParaId = paragraphIdForNode(prevNode);
+        const newParaId = paragraphIdForNode(newNode);
 
-      // If we are moving to a different paragraph, collapse the old one unless the
-      // user explicitly expanded it via the chevron.
-      if (prevParaId && prevParaId !== newParaId && !userExpanded.has(prevParaId)) {
-        openSet.delete(prevParaId);
-      }
+        // If we are moving to a different paragraph, collapse the old one unless the
+        // user explicitly expanded it via the chevron.
+        if (prevParaId && prevParaId !== newParaId && !userExpanded.has(prevParaId)) {
+          openSet.delete(prevParaId);
+        }
 
-      selectedId = newNode.id;
+        selectedId = newNode.id;
 
-      // Always ensure the paragraph that owns the selection is expanded in the tree
-      if (newParaId) {
-        openSet.add(newParaId);
+        // Always ensure the paragraph that owns the selection is expanded in the tree
+        if (newParaId) {
+          openSet.add(newParaId);
+        }
+      } else {
+        // Strings mode
+        selectedKeyId = newNode.id;
       }
 
       renderAll();
@@ -1650,7 +1902,10 @@
 
     function nodeRow(node, depth) {
       const row = document.createElement("div");
-      row.className = "node" + (node.id === selectedId ? " sel" : "");
+      const isSelected = currentMode === "document" 
+        ? (node.id === selectedId)
+        : (node.id === selectedKeyId);
+      row.className = "node" + (isSelected ? " sel" : "");
       row.style.paddingLeft = (8 + depth * 14) + "px";
 
       const hasChildren = node.children && node.children.length;
@@ -1688,7 +1943,14 @@
       r1.appendChild(name); r1.appendChild(type);
       
       // Add language indicator in green if translation exists
-      if (node.type === "w:p" && PARA_TRANSLATIONS[node.id]) {
+      if (currentMode === "document" && node.type === "w:p" && PARA_TRANSLATIONS[node.id]) {
+        const langLabel = document.createElement("span");
+        langLabel.className = "txt-trans";
+        langLabel.textContent = "FR";
+        langLabel.style.fontWeight = "700";
+        langLabel.style.marginLeft = "8px";
+        r1.appendChild(langLabel);
+      } else if (currentMode === "strings" && node.translation) {
         const langLabel = document.createElement("span");
         langLabel.className = "txt-trans";
         langLabel.textContent = "FR";
@@ -1704,10 +1966,15 @@
         t.className = "txt";
         t.textContent = node.text.replace(/\s+/g, " ");
         meta.appendChild(t);
-        if (node.type === "w:p" && PARA_TRANSLATIONS[node.id]) {
+        if (currentMode === "document" && node.type === "w:p" && PARA_TRANSLATIONS[node.id]) {
           const tt = document.createElement("div");
           tt.className = "txt txt-trans";
           tt.textContent = PARA_TRANSLATIONS[node.id].replace(/\s+/g, " ");
+          meta.appendChild(tt);
+        } else if (currentMode === "strings" && node.translation) {
+          const tt = document.createElement("div");
+          tt.className = "txt txt-trans";
+          tt.textContent = node.translation;
           meta.appendChild(tt);
         }
       }
@@ -1724,7 +1991,9 @@
 
     function renderTree() {
       $tree.innerHTML = "";
-      const root = FILTERED_TREE;
+      const root = currentMode === "document" ? FILTERED_TREE : FILTERED_STRINGS_TREE;
+      if (!root) return;
+      
       function walk(node, depth) {
         $tree.appendChild(nodeRow(node, depth));
         const hasChildren = node.children && node.children.length;
@@ -1747,7 +2016,12 @@
     }
 
     function renderInspector() {
-      const node = findNodeById(FILTERED_TREE, selectedId) || findNodeById(PARSED.tree, selectedId);
+      let node;
+      if (currentMode === "document") {
+        node = findNodeById(FILTERED_TREE, selectedId) || findNodeById(PARSED.tree, selectedId);
+      } else {
+        node = findNodeById(FILTERED_STRINGS_TREE, selectedKeyId) || findNodeById(STRINGS_TREE, selectedKeyId);
+      }
       if (!node) return;
 
       $selHint.textContent = `${node.type} · ${node.id}`;
@@ -1756,6 +2030,9 @@
       $meta.appendChild(kvRow("name", node.name));
       $meta.appendChild(kvRow("type", node.type));
       $meta.appendChild(kvRow("text", node.text ? node.text.replace(/\s+/g, " ") : ""));
+      if (currentMode === "strings" && node.translation) {
+        $meta.appendChild(kvRow("translation", node.translation));
+      }
       $meta.appendChild(kvRow("children", (node.children && node.children.length) ? node.children.length : 0));
 
       $props.innerHTML = "";
@@ -1779,6 +2056,100 @@
       const container = document.getElementById("runsCompare");
       container.innerHTML = "";
 
+      if (currentMode === "strings") {
+        // Strings mode: show key-value translation table
+        const table = document.createElement("table");
+        table.className = "runs-table";
+
+        const thead = document.createElement("thead");
+        const hr = document.createElement("tr");
+        const th1 = document.createElement("th");
+        th1.className = "para-id";
+        th1.textContent = "Key";
+        const th2 = document.createElement("th");
+        th2.textContent = "EN value";
+        const th3 = document.createElement("th");
+        th3.textContent = "FR value";
+        hr.appendChild(th1);
+        hr.appendChild(th2);
+        hr.appendChild(th3);
+        thead.appendChild(hr);
+        table.appendChild(thead);
+
+        const tbody = document.createElement("tbody");
+        
+        const root = FILTERED_STRINGS_TREE || STRINGS_TREE;
+        if (root && root.children) {
+          root.children.forEach((keyNode, idx) => {
+            const tr = document.createElement("tr");
+            const isCurrent = keyNode.id === selectedKeyId;
+            if (isCurrent) {
+              tr.className = "current-para";
+            }
+
+            const td1 = document.createElement("td");
+            td1.className = "para-id";
+            td1.textContent = keyNode.name;
+            td1.style.fontFamily = "var(--mono)";
+            td1.style.fontSize = "11px";
+
+            const td2 = document.createElement("td");
+            td2.className = "run-text";
+            
+            if (keyNode.pluralData) {
+              // Show plural variants
+              const pluralDiv = document.createElement("div");
+              pluralDiv.style.whiteSpace = "pre-wrap";
+              pluralDiv.textContent = `one: ${keyNode.pluralData.one.en}\nmany: ${keyNode.pluralData.many.en}`;
+              td2.appendChild(pluralDiv);
+            } else {
+              td2.textContent = keyNode.text || "";
+            }
+
+            const td3 = document.createElement("td");
+            td3.className = "run-text";
+            
+            if (keyNode.pluralData) {
+              // Show plural variants
+              const pluralDiv = document.createElement("div");
+              pluralDiv.style.whiteSpace = "pre-wrap";
+              pluralDiv.textContent = `one: ${keyNode.pluralData.one.fr}\nmany: ${keyNode.pluralData.many.fr}`;
+              td3.appendChild(pluralDiv);
+            } else {
+              td3.textContent = keyNode.translation || "";
+            }
+
+            tr.appendChild(td1);
+            tr.appendChild(td2);
+            tr.appendChild(td3);
+
+            tr.addEventListener("click", () => {
+              handleNodeSelection(keyNode);
+            });
+
+            tbody.appendChild(tr);
+          });
+        }
+
+        table.appendChild(tbody);
+        container.appendChild(table);
+
+        // Scroll to current key
+        setTimeout(() => {
+          const currentRows = container.querySelectorAll('.current-para');
+          if (currentRows.length > 0) {
+            const firstCurrentRow = currentRows[0];
+            const containerRect = container.getBoundingClientRect();
+            const rowRect = firstCurrentRow.getBoundingClientRect();
+            const scrollTop = container.scrollTop + (rowRect.top - containerRect.top) - (containerRect.height / 2) + (rowRect.height / 2);
+            container.scrollTop = Math.max(0, scrollTop);
+          }
+        }, 0);
+
+        return;
+      }
+
+      // Document mode (existing logic)
       const node = findNodeById(FILTERED_TREE, selectedId) || findNodeById(PARSED.tree, selectedId);
       if (!node) return;
 
@@ -2044,6 +2415,19 @@
     }
 
     function renderPreview() {
+      if (currentMode === "strings") {
+        // Hide preview in strings mode
+        if ($previewCard) {
+          $previewCard.style.display = "none";
+        }
+        return;
+      }
+
+      // Show preview in document mode
+      if ($previewCard) {
+        $previewCard.style.display = "";
+      }
+
       $preview.innerHTML = "";
       const selectedNode = findNodeById(FILTERED_TREE, selectedId) || findNodeById(PARSED.tree, selectedId);
       const selectedParaId = paragraphIdForNode(selectedNode);
@@ -2072,11 +2456,32 @@
     }
 
     function renderJSON() {
-      $json.textContent = JSON.stringify(FILTERED_TREE, null, 2);
+      if (currentMode === "document") {
+        $json.textContent = JSON.stringify(FILTERED_TREE, null, 2);
+      } else {
+        $json.textContent = JSON.stringify(FILTERED_STRINGS_TREE || STRINGS_TREE, null, 2);
+      }
     }
 
     function renderRawXml() {
-      $rawXml.textContent = XML_SOURCE;
+      if (currentMode === "document") {
+        $rawXml.textContent = XML_SOURCE;
+      } else {
+        // For strings mode, show the strings data as JSON-like structure
+        const stringsObj = {};
+        const root = FILTERED_STRINGS_TREE || STRINGS_TREE;
+        if (root && root.children) {
+          root.children.forEach(keyNode => {
+            if (keyNode.pluralData) {
+              stringsObj[keyNode.name + ".one"] = keyNode.pluralData.one.en;
+              stringsObj[keyNode.name + ".many"] = keyNode.pluralData.many.en;
+            } else {
+              stringsObj[keyNode.name] = keyNode.text;
+            }
+          });
+        }
+        $rawXml.textContent = JSON.stringify(stringsObj, null, 2);
+      }
     }
 
     function renderAll() {
@@ -2090,26 +2495,80 @@
 
     function applyFilter() {
       const q = $filter.value.trim().toLowerCase();
-      if (!q) {
-        FILTERED_PARAS = ALL_PARAS.slice();
-        FILTERED_TREE = PARSED.tree;
+      
+      if (currentMode === "document") {
+        if (!q) {
+          FILTERED_PARAS = ALL_PARAS.slice();
+          FILTERED_TREE = PARSED.tree;
+        } else {
+          FILTERED_PARAS = ALL_PARAS.filter(p => (p.text || "").toLowerCase().includes(q));
+          FILTERED_TREE = {
+            ...PARSED.tree,
+            children: [{
+              id: "body", type: "w:body",
+              name: `body (filtered: ${FILTERED_PARAS.length}/${ALL_PARAS.length})`,
+              props: {}, text: "", children: FILTERED_PARAS
+            }]
+          };
+          openSet.add("root"); openSet.add("body");
+        }
+        if (!findNodeById(FILTERED_TREE, selectedId)) selectedId = FILTERED_PARAS[0]?.id || "body";
       } else {
-        FILTERED_PARAS = ALL_PARAS.filter(p => (p.text || "").toLowerCase().includes(q));
-        FILTERED_TREE = {
-          ...PARSED.tree,
-          children: [{
-            id: "body", type: "w:body",
-            name: `body (filtered: ${FILTERED_PARAS.length}/${ALL_PARAS.length})`,
-            props: {}, text: "", children: FILTERED_PARAS
-          }]
-        };
-        openSet.add("root"); openSet.add("body");
+        // Strings mode
+        if (!q) {
+          FILTERED_STRINGS_TREE = STRINGS_TREE;
+        } else {
+          const filtered = STRINGS_TREE.children.filter(keyNode => 
+            keyNode.name.toLowerCase().includes(q) || 
+            (keyNode.text || "").toLowerCase().includes(q) ||
+            (keyNode.translation || "").toLowerCase().includes(q)
+          );
+          FILTERED_STRINGS_TREE = {
+            ...STRINGS_TREE,
+            children: filtered
+          };
+        }
+        if (!findNodeById(FILTERED_STRINGS_TREE, selectedKeyId)) {
+          selectedKeyId = FILTERED_STRINGS_TREE.children[0]?.id || null;
+        }
       }
-      if (!findNodeById(FILTERED_TREE, selectedId)) selectedId = FILTERED_PARAS[0]?.id || "body";
       renderAll();
     }
 
-    // ==== 4) Boot ====
+    function switchMode(mode) {
+      currentMode = mode;
+      
+      // Update UI labels
+      if (mode === "document") {
+        $leftTitle.textContent = "Nodes";
+        $filter.placeholder = "Filter paragraphs by text…";
+        $tableHint.textContent = "Side-by-side runs for current paragraph";
+        $modeDocument.classList.add("active");
+        $modeStrings.classList.remove("active");
+        selectedId = FILTERED_PARAS[0]?.id || "body";
+        selectedKeyId = null;
+        // Show preview card in document mode
+        if ($previewCard) {
+          $previewCard.style.display = "";
+        }
+      } else {
+        $leftTitle.textContent = "Keys";
+        $filter.placeholder = "Filter keys by name or value…";
+        $tableHint.textContent = "Side-by-side key-value translations";
+        $modeDocument.classList.remove("active");
+        $modeStrings.classList.add("active");
+        selectedKeyId = FILTERED_STRINGS_TREE?.children[0]?.id || STRINGS_TREE?.children[0]?.id || null;
+        selectedId = null;
+        // Hide preview card in strings mode
+        if ($previewCard) {
+          $previewCard.style.display = "none";
+        }
+      }
+      
+      renderAll();
+    }
+
+    // ==== 5) Boot ====
     try {
       PARSED = parseDocument(XML_SOURCE);
       ALL_PARAS = PARSED.paragraphs;
@@ -2131,6 +2590,14 @@
 
       FILTERED_PARAS = ALL_PARAS.slice();
       FILTERED_TREE = PARSED.tree;
+
+      // Build strings tree
+      STRINGS_TREE = buildStringsTree();
+      FILTERED_STRINGS_TREE = STRINGS_TREE;
+
+      // Set up mode toggle handlers
+      $modeDocument.addEventListener("click", () => switchMode("document"));
+      $modeStrings.addEventListener("click", () => switchMode("strings"));
 
       renderAll();
       $filter.addEventListener("input", applyFilter);
