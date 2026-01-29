@@ -1754,7 +1754,7 @@
         const info = document.createElement("div");
         info.style.fontSize = "12px";
         info.style.color = "#64748b";
-        info.textContent = "Select a paragraph (or its run) to see per-run comparison.";
+        info.textContent = "Select a paragraph (or its run) to see per-sentence comparison.";
         container.appendChild(info);
         return;
       }
@@ -1763,52 +1763,159 @@
       const prevIdx = pIdx > 0 ? pIdx - 1 : null;
       const nextIdx = pIdx < ALL_PARAS.length - 1 ? pIdx + 1 : null;
 
-      function renderRunText(run) {
-        if (!run || !run.text) {
+      // Helper: split a paragraph into "sentences" based on simple punctuation / line breaks.
+      // Returns { sentences: [{ segments: [{ run, start, end }] }], runFirstSentenceIdx, runLastSentenceIdx }
+      function computeSentenceData(para) {
+        const runs = para.children || [];
+        const sentences = [];
+        let current = { segments: [] };
+
+        const boundaryChars = /[.!?;:]/;
+
+        runs.forEach(run => {
+          const text = run.text || "";
+          let start = 0;
+
+          for (let i = 0; i < text.length; i++) {
+            const ch = text[i];
+            const isLineBreak = ch === "\n" || ch === "\r";
+            const isBoundary = boundaryChars.test(ch) || isLineBreak;
+
+            if (isBoundary) {
+              // include boundary character in this sentence
+              const end = i + 1;
+              if (end > start) {
+                current.segments.push({ run, start, end });
+              }
+              if (current.segments.length) {
+                sentences.push(current);
+                current = { segments: [] };
+              }
+              start = end;
+            }
+          }
+
+          if (start < text.length) {
+            current.segments.push({ run, start, end: text.length });
+          }
+        });
+
+        if (current.segments.length) {
+          sentences.push(current);
+        }
+
+        // Map each run id to first/last sentence index it appears in
+        const runFirstSentenceIdx = {};
+        const runLastSentenceIdx = {};
+
+        sentences.forEach((sent, sIdx) => {
+          sent.segments.forEach(seg => {
+            const id = seg.run.id;
+            if (runFirstSentenceIdx[id] === undefined) {
+              runFirstSentenceIdx[id] = sIdx;
+            }
+            runLastSentenceIdx[id] = sIdx;
+          });
+        });
+
+        return { sentences, runFirstSentenceIdx, runLastSentenceIdx };
+      }
+
+      function renderSentenceCell(sentenceData, sIdx) {
+        const { sentences, runFirstSentenceIdx, runLastSentenceIdx } = sentenceData;
+
+        if (!sentences[sIdx]) {
           const empty = document.createElement("span");
           empty.style.color = "#94a3b8";
           empty.textContent = "—";
           return empty;
         }
 
+        const sentence = sentences[sIdx];
         const wrapper = document.createElement("span");
         wrapper.className = "run-text";
 
-        const props = run.props || {};
-        const text = run.text;
-
-        // Collect "other" styles (not bold/italic/underline)
-        const otherStyles = [];
-        if (props.color) otherStyles.push({ name: "color", value: props.color });
-        if (props.fontAscii) otherStyles.push({ name: "font", value: props.fontAscii });
-        if (typeof props.szHalfPoints === "number") {
-          otherStyles.push({ name: "font-size", value: `${props.szHalfPoints / 2}pt` });
-        }
-        if (props.rStyle) otherStyles.push({ name: "style", value: props.rStyle });
-
-        // Add opening tags for other styles
-        otherStyles.forEach(style => {
-          const openTag = document.createElement("span");
-          openTag.className = "style-tag style-tag-open";
-          openTag.textContent = `<${style.name}:${style.value}>`;
-          wrapper.appendChild(openTag);
+        // Precompute last segment index per run within this sentence
+        const lastSegIdxForRun = {};
+        sentence.segments.forEach((seg, idx) => {
+          lastSegIdxForRun[seg.run.id] = idx;
         });
 
-        // Create text span with direct styles
-        const textSpan = document.createElement("span");
-        textSpan.textContent = text;
-        if (props.bold) textSpan.style.fontWeight = "700";
-        if (props.italic) textSpan.style.fontStyle = "italic";
-        if (props.underline) textSpan.style.textDecoration = "underline";
-        if (props.color) textSpan.style.color = "#" + props.color;
-        wrapper.appendChild(textSpan);
+        const seenRunInSentence = new Set();
 
-        // Add closing tags for other styles (in reverse order)
-        otherStyles.reverse().forEach(style => {
-          const closeTag = document.createElement("span");
-          closeTag.className = "style-tag style-tag-close";
-          closeTag.textContent = `</${style.name}:${style.value}>`;
-          wrapper.appendChild(closeTag);
+        sentence.segments.forEach((seg, idx) => {
+          const run = seg.run;
+          const props = run.props || {};
+          const runId = run.id;
+
+          const otherStyles = [];
+          if (props.color) otherStyles.push({ name: "color", value: props.color });
+          if (props.fontAscii) otherStyles.push({ name: "font", value: props.fontAscii });
+          if (typeof props.szHalfPoints === "number") {
+            otherStyles.push({ name: "font-size", value: `${props.szHalfPoints / 2}pt` });
+          }
+          if (props.rStyle) otherStyles.push({ name: "style", value: props.rStyle });
+
+          const hasStyleTag = otherStyles.length > 0;
+
+          const isFirstSegOfRunInSentence = !seenRunInSentence.has(runId);
+          seenRunInSentence.add(runId);
+          const isLastSegOfRunInSentence = lastSegIdxForRun[runId] === idx;
+
+          const shouldShowStartMarker =
+            !hasStyleTag &&
+            isFirstSegOfRunInSentence &&
+            runFirstSentenceIdx[runId] === sIdx;
+
+          const shouldShowEndMarker =
+            !hasStyleTag &&
+            isLastSegOfRunInSentence &&
+            runLastSentenceIdx[runId] === sIdx;
+
+          const segWrapper = document.createElement("span");
+
+          if (shouldShowStartMarker) {
+            const startMark = document.createElement("span");
+            startMark.textContent = "'";
+            startMark.style.color = "#16a34a"; // green
+            startMark.style.marginRight = "1px";
+            segWrapper.appendChild(startMark);
+          }
+
+          // Style tags (if any)
+          otherStyles.forEach(style => {
+            const openTag = document.createElement("span");
+            openTag.className = "style-tag style-tag-open";
+            openTag.textContent = `<${style.name}:${style.value}>`;
+            segWrapper.appendChild(openTag);
+          });
+
+          // Text span for this run segment
+          const textSpan = document.createElement("span");
+          textSpan.textContent = (run.text || "").slice(seg.start, seg.end);
+          if (props.bold) textSpan.style.fontWeight = "700";
+          if (props.italic) textSpan.style.fontStyle = "italic";
+          if (props.underline) textSpan.style.textDecoration = "underline";
+          if (props.color) textSpan.style.color = "#" + props.color;
+          segWrapper.appendChild(textSpan);
+
+          // Closing style tags (reverse order)
+          otherStyles.slice().reverse().forEach(style => {
+            const closeTag = document.createElement("span");
+            closeTag.className = "style-tag style-tag-close";
+            closeTag.textContent = `</${style.name}:${style.value}>`;
+            segWrapper.appendChild(closeTag);
+          });
+
+          if (shouldShowEndMarker) {
+            const endMark = document.createElement("span");
+            endMark.textContent = "'";
+            endMark.style.color = "#dc2626"; // red
+            endMark.style.marginLeft = "1px";
+            segWrapper.appendChild(endMark);
+          }
+
+          wrapper.appendChild(segWrapper);
         });
 
         return wrapper;
@@ -1823,15 +1930,11 @@
       const th1 = document.createElement("th");
       th1.className = "para-id";
       th1.textContent = "Para";
-      const th2 = document.createElement("th");
-      th2.className = "run-num";
-      th2.textContent = "#";
       const th3 = document.createElement("th");
-      th3.textContent = "EN run text";
+      th3.textContent = "EN sentence";
       const th4 = document.createElement("th");
-      th4.textContent = "FR run text";
+      th4.textContent = "FR sentence";
       hr.appendChild(th1);
-      hr.appendChild(th2);
       hr.appendChild(th3);
       hr.appendChild(th4);
       thead.appendChild(hr);
@@ -1841,13 +1944,11 @@
       
       // Helper function to add rows for a paragraph
       function addParagraphRows(paraEn, paraFr, paraIdx, isCurrent) {
-        const runsEn = paraEn.children || [];
-        const runsFr = paraFr.children || [];
-        const maxLen = Math.max(runsEn.length, runsFr.length);
+        const sentDataEn = computeSentenceData(paraEn);
+        const sentDataFr = computeSentenceData(paraFr);
+        const maxLen = Math.max(sentDataEn.sentences.length, sentDataFr.sentences.length);
 
         for (let i = 0; i < maxLen; i++) {
-          const rEn = runsEn[i];
-          const rFr = runsFr[i];
           const tr = document.createElement("tr");
           
           if (isCurrent) {
@@ -1859,20 +1960,15 @@
           const paraId = (paraEn && paraEn.props && paraEn.props.paraId) ? paraEn.props.paraId : null;
           td1.textContent = paraId || `p${paraIdx}`;
 
-          const td2 = document.createElement("td");
-          td2.className = "run-num";
-          td2.textContent = String(i + 1);
-
           const td3 = document.createElement("td");
           td3.className = "run-text";
-          td3.appendChild(renderRunText(rEn));
+          td3.appendChild(renderSentenceCell(sentDataEn, i));
 
           const td4 = document.createElement("td");
           td4.className = "run-text";
-          td4.appendChild(renderRunText(rFr));
+          td4.appendChild(renderSentenceCell(sentDataFr, i));
 
           tr.appendChild(td1);
-          tr.appendChild(td2);
           tr.appendChild(td3);
           tr.appendChild(td4);
           tbody.appendChild(tr);
