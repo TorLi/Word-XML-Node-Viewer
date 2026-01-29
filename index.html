@@ -478,9 +478,12 @@
       box-sizing: border-box;
     }
 
+    /* Single scrollbar: only .card-b scrolls; inner .code grows with content */
     .stack > .card > .card-b .code {
       max-height: none;
-      height: 100%;
+      height: auto;
+      min-height: 100%;
+      overflow: visible;
       box-sizing: border-box;
     }
   </style>
