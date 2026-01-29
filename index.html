@@ -412,6 +412,7 @@
       top: 0;
       z-index: 10;
       background: #f8fafc;
+      box-shadow: 0 1px 0 var(--border);
     }
 
     .runs-table .para-id {
@@ -484,16 +485,49 @@
       min-height: 30vh;
       overflow: auto;
       box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
     }
 
-    /* Single scrollbar: only .card-b scrolls; inner .code grows with content */
-    .stack > .card > .card-b .code,
-    .stack > .card > .card-b .code-lines {
+    /* Translation table: scroll only the inner wrapper so thead can stick */
+    .stack > .card > .card-b:has(.runs-table-scroll) {
+      overflow: hidden;
+    }
+
+    .runs-table-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    /* JSON/XML: make .code the scroll container so it fills the card and scrollbar is on dark background */
+    .stack > .card > .card-b:has(> .code) {
+      overflow: hidden;
+    }
+
+    .stack > .card > .card-b > .code,
+    .stack > .card > .card-b > .code.code-lines {
+      flex: 1 1 auto;
+      min-height: 0;
       max-height: none;
-      height: auto;
-      min-height: 100%;
-      overflow: visible;
+      overflow: auto;
       box-sizing: border-box;
+    }
+
+    /* Dark scrollbar for code blocks so JSON/XML stay fully black */
+    .code {
+      scrollbar-color: #334155 #0b1220;
+    }
+    .code::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    .code::-webkit-scrollbar-track {
+      background: #0b1220;
+    }
+    .code::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
     }
   </style>
 </head>
@@ -2197,18 +2231,21 @@
         }
 
         table.appendChild(tbody);
-        container.appendChild(table);
+        const scrollWrap = document.createElement("div");
+        scrollWrap.className = "runs-table-scroll";
+        scrollWrap.appendChild(table);
+        container.appendChild(scrollWrap);
 
         // Scroll to current key in other panels only; smooth scroll
         if (lastSelectionSource !== "runsCompare") {
           setTimeout(() => {
-            const currentRows = container.querySelectorAll('.current-para');
+            const currentRows = scrollWrap.querySelectorAll('.current-para');
             if (currentRows.length > 0) {
               const firstCurrentRow = currentRows[0];
-              const containerRect = container.getBoundingClientRect();
+              const containerRect = scrollWrap.getBoundingClientRect();
               const rowRect = firstCurrentRow.getBoundingClientRect();
-              const scrollTop = container.scrollTop + (rowRect.top - containerRect.top) - (containerRect.height / 2) + (rowRect.height / 2);
-              container.scrollTo({ top: Math.max(0, scrollTop), behavior: "smooth" });
+              const scrollTop = scrollWrap.scrollTop + (rowRect.top - containerRect.top) - (containerRect.height / 2) + (rowRect.height / 2);
+              scrollWrap.scrollTo({ top: Math.max(0, scrollTop), behavior: "smooth" });
             }
           }, 0);
         }
@@ -2466,18 +2503,21 @@
       }
 
       table.appendChild(tbody);
-      container.appendChild(table);
+      const scrollWrap = document.createElement("div");
+      scrollWrap.className = "runs-table-scroll";
+      scrollWrap.appendChild(table);
+      container.appendChild(scrollWrap);
 
       // Scroll to current paragraph in other panels only; smooth scroll
       if (lastSelectionSource !== "runsCompare") {
         setTimeout(() => {
-          const currentRows = container.querySelectorAll('.current-para');
+          const currentRows = scrollWrap.querySelectorAll('.current-para');
           if (currentRows.length > 0) {
             const firstCurrentRow = currentRows[0];
-            const containerRect = container.getBoundingClientRect();
+            const containerRect = scrollWrap.getBoundingClientRect();
             const rowRect = firstCurrentRow.getBoundingClientRect();
-            const scrollTop = container.scrollTop + (rowRect.top - containerRect.top) - (containerRect.height / 2) + (rowRect.height / 2);
-            container.scrollTo({ top: Math.max(0, scrollTop), behavior: "smooth" });
+            const scrollTop = scrollWrap.scrollTop + (rowRect.top - containerRect.top) - (containerRect.height / 2) + (rowRect.height / 2);
+            scrollWrap.scrollTo({ top: Math.max(0, scrollTop), behavior: "smooth" });
           }
         }, 0);
       }
@@ -2562,10 +2602,9 @@
         $json.appendChild(div);
       });
       if (targetLineIndex >= 0) {
-        const container = $json.parentElement;
         setTimeout(() => {
           const el = document.getElementById("json-scroll-target");
-          if (el && container) scrollContainerToCenter(container, el);
+          if (el && $json) scrollContainerToCenter($json, el);
         }, 0);
       }
     }
@@ -2633,10 +2672,9 @@
         $rawXml.appendChild(div);
       });
       if (targetLineIndex >= 0) {
-        const container = $rawXml.parentElement;
         setTimeout(() => {
           const el = document.getElementById("xml-scroll-target");
-          if (el && container) scrollContainerToCenter(container, el);
+          if (el && $rawXml) scrollContainerToCenter($rawXml, el);
         }, 0);
       }
     }
